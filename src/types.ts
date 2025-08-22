@@ -1,6 +1,6 @@
 type SeriesSize = 'sm' | 'md' | 'lg';
 
-export interface SimpleOptions {
+export interface WaveformsOptions {
   text: string;
   showSeriesCount: boolean;
   seriesCountSize: SeriesSize;

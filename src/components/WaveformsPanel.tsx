@@ -1,11 +1,11 @@
 import React from 'react';
 import { PanelProps } from '@grafana/data';
-import { SimpleOptions } from 'types';
+import { WaveformsOptions } from 'types';
 import { css, cx } from '@emotion/css';
 import { useStyles2, useTheme2 } from '@grafana/ui';
 import { PanelDataErrorView } from '@grafana/runtime';
 
-interface Props extends PanelProps<SimpleOptions> {}
+interface Props extends PanelProps<WaveformsOptions> {}
 
 const getStyles = () => {
   return {
@@ -27,7 +27,7 @@ const getStyles = () => {
   };
 };
 
-export const SimplePanel: React.FC<Props> = ({ options, data, width, height, fieldConfig, id }) => {
+export const WaveformsPanel: React.FC<Props> = ({ options, data, width, height, fieldConfig, id }) => {
   const theme = useTheme2();
   const styles = useStyles2(getStyles);
 
