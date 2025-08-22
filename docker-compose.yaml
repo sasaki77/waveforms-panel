@@ -1,0 +1,14 @@
+services:
+  grafana:
+    extends:
+      file: .config/docker-compose-base.yaml
+      service: grafana
+    build:
+      args:
+        grafana_image: ${GRAFANA_IMAGE:-grafana}
+        grafana_version: ${GRAFANA_VERSION:-12.1.0}
+    volumes:
+      - grafana-waveforms-storage:/var/lib/grafana
+
+volumes:
+  grafana-waveforms-storage:
