@@ -1,9 +1,10 @@
 import { PanelPlugin } from '@grafana/data';
+import { commonOptionsBuilder } from '@grafana/ui';
 import { WaveformsOptions } from './types';
 import { WaveformsPanel } from './components/WaveformsPanel';
 
 export const plugin = new PanelPlugin<WaveformsOptions>(WaveformsPanel).setPanelOptions((builder) => {
-  return builder
+  builder
     .addTextInput({
       path: 'text',
       name: 'Simple text option',
@@ -37,4 +38,6 @@ export const plugin = new PanelPlugin<WaveformsOptions>(WaveformsPanel).setPanel
       },
       showIf: (config) => config.showSeriesCount,
     });
+
+  commonOptionsBuilder.addLegendOptions(builder);
 });
