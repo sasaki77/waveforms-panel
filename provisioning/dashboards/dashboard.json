@@ -18,14 +18,17 @@
   "editable": true,
   "fiscalYearStartMonth": 0,
   "graphTooltip": 0,
-  "id": 1,
+  "id": 2,
   "links": [],
-  "liveNow": false,
   "panels": [
     {
       "datasource": {
         "type": "grafana-testdata-datasource",
         "uid": "trlxrdZVk"
+      },
+      "fieldConfig": {
+        "defaults": {},
+        "overrides": []
       },
       "gridPos": {
         "h": 8,
@@ -35,19 +38,27 @@
       },
       "id": 1,
       "options": {
+        "index": 0,
+        "legend": {
+          "calcs": [],
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": true
+        },
         "seriesCountSize": "sm",
         "showSeriesCount": false,
         "text": "Default value of text input option"
       },
+      "pluginVersion": "1.0.0",
       "targets": [
         {
           "datasource": {
             "type": "grafana-testdata-datasource",
             "uid": "db84e60d-b92a-4089-82cb-34842fb1754b"
           },
+          "rawFrameContent": "[\n  {\n    \"columns\": [\n      {\n        \"text\": \"index\",\n        \"type\": \"number\"\n      },\n      {\n        \"text\": \"2023-05-09T17:11:14.422+09:00\",\n        \"type\": \"number\"\n      },\n      {\n        \"text\": \"2023-05-10T10:23:22.469+09:00\",\n        \"type\": \"number\"\n      }\n    ],\n    \"rows\": [\n      [0, 1, 10],\n      [1, 2, 20],\n      [2, 3, 15],\n      [3, 4, 25],\n      [4, 5, 30]\n    ]\n  }\n]\n",
           "refId": "A",
-          "scenarioId": "raw_frame",
-          "rawFrameContent": "[\n  {\n    \"columns\": [\n      {\n        \"text\": \"Time\",\n        \"type\": \"time\"\n      },\n      {\n        \"text\": \"Label\",\n        \"type\": \"string\"\n      },\n      {\n        \"text\": \"Value\",\n        \"type\": \"number\"\n      }\n    ],\n    \"rows\": [\n      [1609459200000, \"A\", 10],\n      [1609462800000, \"B\", 20],\n      [1609466400000, \"C\", 15],\n      [1609470000000, \"D\", 25],\n      [1609473600000, \"E\", 30]\n    ]\n  },\n{\n    \"columns\": [\n      {\n        \"text\": \"Time\",\n        \"type\": \"time\"\n      },\n      {\n        \"text\": \"Label\",\n        \"type\": \"string\"\n      },\n      {\n        \"text\": \"Value\",\n        \"type\": \"number\"\n      }\n    ],\n    \"rows\": [\n      [1609459200000, \"A\", 40],\n      [1609462800000, \"B\", 50],\n      [1609466400000, \"C\", 45],\n      [1609470000000, \"D\", 55],\n      [1609473600000, \"E\", 60]\n    ]\n  }\n]"
+          "scenarioId": "raw_frame"
         }
       ],
       "title": "Sample Panel Title",
@@ -58,6 +69,10 @@
         "type": "grafana-testdata-datasource",
         "uid": "trlxrdZVk"
       },
+      "fieldConfig": {
+        "defaults": {},
+        "overrides": []
+      },
       "gridPos": {
         "h": 8,
         "w": 12,
@@ -66,10 +81,17 @@
       },
       "id": 2,
       "options": {
+        "legend": {
+          "calcs": [],
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": true
+        },
         "seriesCountSize": "sm",
         "showSeriesCount": false,
         "text": "Default value of text input option"
       },
+      "pluginVersion": "1.0.0",
       "targets": [
         {
           "alias": "",
@@ -85,8 +107,9 @@
       "type": "sasaki77-waveforms-panel"
     }
   ],
+  "preload": false,
   "refresh": "",
-  "schemaVersion": 39,
+  "schemaVersion": 41,
   "tags": [],
   "templating": {
     "list": []
@@ -98,7 +121,6 @@
   "timepicker": {},
   "timezone": "",
   "title": "Provisioned waveforms dashboard",
-  "uid": "a538aeff-5a8a-42a5-901c-938d896fdd6f",
-  "version": 1,
-  "weekStart": ""
+  "uid": "a538aeff-5a8a-42a5-901c-938d196fdd6f",
+  "version": 6
 }
