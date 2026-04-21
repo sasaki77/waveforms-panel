@@ -136,6 +136,8 @@ export const WaveformsPanel: React.FC<Props> = ({ options, data, width, height, 
               orientation="horizontal"
               value={0}
               onChange={onIndexChange}
+              showInput={false}
+              inputId=""
             />
           </div>
         </div>
