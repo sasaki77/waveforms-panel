@@ -12,14 +12,12 @@ jobs:
       contents: write
 
     env:
-      ZIP_NAME: waveforms-panel
+      ZIP_NAME: sasaki77-waveforms-panel
       NODE_VERSION: '24'
 
     steps:
       - name: Checkout repository
         uses: actions/checkout@v6
-        with:
-          submodules: 'recursive'
 
       - name: Setup NodeJS
         uses: actions/setup-node@v6
@@ -27,10 +25,10 @@ jobs:
           node-version: ${{ env.NODE_VERSION }}
 
       - name: Install dependencies
-        run: npm install
+        run: npm ci
 
       - name: Build frontend
-        run: num run build
+        run: npm run build
 
       - name: Archive Release Files
         run: |
@@ -49,5 +47,5 @@ jobs:
           gh release create "$TAG" ./${{ env.ZIP_NAME }}.zip \
             --title "$TAG" \
             --notes "This release has been automatically generated." \
-            --generate-notes
+            --generate-notes \
             --prerelease
