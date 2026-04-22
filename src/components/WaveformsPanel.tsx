@@ -177,7 +177,7 @@ export const WaveformsPanel: React.FC<Props> = ({ options, data, width, height, 
           </div>
           <div style={{ width: w - 300, height: 50, marginLeft: 'auto', marginRight: 'auto' }}>
             <GrafanaTooltip content={datasets[0].label}>
-              <div>
+              <div className={styles.slider}>
                 <Slider
                   included={false}
                   marks={marks}
@@ -202,6 +202,12 @@ const getStyles = () => ({
   legend: css({
     div: {
       justifyContent: 'flex-start',
+    },
+  }),
+
+  slider: css({
+    '.rc-slider-mark-text': {
+      whiteSpace: 'nowrap',
     },
   }),
 });
