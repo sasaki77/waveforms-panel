@@ -138,7 +138,7 @@ export const WaveformsPanel: React.FC<Props> = ({ options, data, width, height, 
       y: {
         title: {
           display: true,
-          text: 'Value',
+          text: options.axisLabel,
           color: 'white',
         },
         grid: {

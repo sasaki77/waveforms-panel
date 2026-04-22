@@ -24,6 +24,11 @@ export const plugin = new PanelPlugin<WaveformsOptions>(WaveformsPanel).setPanel
         max: 10,
         step: 1,
       },
+    })
+    .addTextInput({
+      path: 'axisLabel',
+      name: 'Axis label',
+      defaultValue: '',
     });
 
   commonOptionsBuilder.addLegendOptions(builder);
