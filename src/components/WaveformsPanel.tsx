@@ -14,10 +14,12 @@ import { WaveformsOptions } from 'types';
 import { config, PanelDataErrorView } from '@grafana/runtime';
 
 import { Line } from 'react-chartjs-2';
-import { Chart as ChartJS, LineElement, PointElement, LinearScale, Tooltip } from 'chart.js';
+import { Chart as ChartJS, LineElement, PointElement, LinearScale, Tooltip, ChartEvent, ActiveElement } from 'chart.js';
 import 'chartjs-adapter-date-fns';
 
-ChartJS.register(LineElement, PointElement, LinearScale, Tooltip);
+import zoomPlugin from 'chartjs-plugin-zoom';
+
+ChartJS.register(LineElement, PointElement, LinearScale, Tooltip, zoomPlugin);
 
 interface Props extends PanelProps<WaveformsOptions> {}
 
@@ -94,6 +96,24 @@ export const WaveformsPanel: React.FC<Props> = ({ options, data, width, height, 
       legend: {
         display: false,
       },
+
+      zoom: {
+        pan: {
+          enabled: false,
+        },
+        zoom: {
+          wheel: {
+            enabled: false,
+          },
+          drag: {
+            enabled: true,
+          },
+          pinch: {
+            enabled: true,
+          },
+          mode: 'xy' as const,
+        },
+      },
     },
 
     scales: {
@@ -128,6 +148,9 @@ export const WaveformsPanel: React.FC<Props> = ({ options, data, width, height, 
           color: 'white',
         },
       },
+    },
+    onClick: (e: ChartEvent, elements: ActiveElement[], chart: ChartJS) => {
+      chart.resetZoom();
     },
   };
 
