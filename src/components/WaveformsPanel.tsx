@@ -1,5 +1,14 @@
+import { css } from '@emotion/css';
 import React, { useState } from 'react';
-import { VizLayout, VizLegend, Slider, useTheme2 } from '@grafana/ui';
+import {
+  VizLayout,
+  VizLegend,
+  Tooltip as GrafanaTooltip,
+  type VizLegendItem,
+  Slider,
+  useTheme2,
+  useStyles2,
+} from '@grafana/ui';
 import { PanelProps } from '@grafana/data';
 import { WaveformsOptions } from 'types';
 import { config, PanelDataErrorView } from '@grafana/runtime';
@@ -48,9 +57,13 @@ export const WaveformsPanel: React.FC<Props> = ({ options, data, width, height, 
     }));
 
     datasets.push({
+      type: 'line',
       label: `${series.name ?? 'Series'} - ${valueFields.name}`,
       data: dataPoints,
+      showLine: true,
       fill: false,
+      borderWidth: options.lineWidth,
+      pointRadius: options.pointSize,
       borderColor: getColorByName(palette[seriesIndex]),
       tension: 0.1,
     });
@@ -124,6 +137,7 @@ export const WaveformsPanel: React.FC<Props> = ({ options, data, width, height, 
       height={height}
       legend={
         <VizLegend
+          className={styles.legend}
           placement={options.legend.placement}
           displayMode={options.legend.displayMode}
           items={items}
@@ -154,11 +168,17 @@ export const WaveformsPanel: React.FC<Props> = ({ options, data, width, height, 
                 />
               </div>
             </GrafanaTooltip>
-              inputId=""
-            />
           </div>
         </div>
       )}
     </VizLayout>
   );
 };
+
+const getStyles = () => ({
+  legend: css({
+    div: {
+      justifyContent: 'flex-start',
+    },
+  }),
+});

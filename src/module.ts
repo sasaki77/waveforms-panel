@@ -5,38 +5,25 @@ import { WaveformsPanel } from './components/WaveformsPanel';
 
 export const plugin = new PanelPlugin<WaveformsOptions>(WaveformsPanel).setPanelOptions((builder) => {
   builder
-    .addTextInput({
-      path: 'text',
-      name: 'Simple text option',
-      description: 'Description of panel option',
-      defaultValue: 'Default value of text input option',
-    })
-    .addBooleanSwitch({
-      path: 'showSeriesCount',
-      name: 'Show series counter',
-      defaultValue: false,
-    })
-    .addRadio({
-      path: 'seriesCountSize',
-      defaultValue: 'sm',
-      name: 'Series counter size',
+    .addSliderInput({
+      path: 'lineWidth',
+      name: 'Line width',
+      defaultValue: 1,
       settings: {
-        options: [
-          {
-            value: 'sm',
-            label: 'Small',
-          },
-          {
-            value: 'md',
-            label: 'Medium',
-          },
-          {
-            value: 'lg',
-            label: 'Large',
-          },
-        ],
+        min: 0,
+        max: 10,
+        step: 1,
       },
-      showIf: (config) => config.showSeriesCount,
+    })
+    .addSliderInput({
+      path: 'pointSize',
+      name: 'Point size',
+      defaultValue: 1,
+      settings: {
+        min: 0,
+        max: 10,
+        step: 1,
+      },
     });
 
   commonOptionsBuilder.addLegendOptions(builder);
