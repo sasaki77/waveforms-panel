@@ -128,15 +128,21 @@ export const WaveformsPanel: React.FC<Props> = ({ options, data, width, height, 
             <Line data={{ datasets }} options={coptions} />
           </div>
           <div style={{ width: w - 300, height: 50, marginLeft: 'auto', marginRight: 'auto' }}>
-            <Slider
-              included={false}
-              marks={marks}
-              max={dlen - 1}
-              min={0}
-              orientation="horizontal"
-              value={0}
-              onChange={onIndexChange}
-              showInput={false}
+            <GrafanaTooltip content={datasets[0].label}>
+              <div>
+                <Slider
+                  included={false}
+                  marks={marks}
+                  max={dlen - 1}
+                  min={0}
+                  orientation="horizontal"
+                  value={0}
+                  onChange={onIndexChange}
+                  showInput={false}
+                  inputId=""
+                />
+              </div>
+            </GrafanaTooltip>
               inputId=""
             />
           </div>
