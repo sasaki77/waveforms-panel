@@ -14,6 +14,7 @@ interface Props extends PanelProps<WaveformsOptions> {}
 
 export const WaveformsPanel: React.FC<Props> = ({ options, data, width, height, fieldConfig, id, onOptionsChange }) => {
   const [index, setIndex] = useState(0);
+  const styles = useStyles2(getStyles);
   const theme = useTheme2();
   if (data.series.length === 0) {
     return <PanelDataErrorView fieldConfig={fieldConfig} panelId={id} data={data} needsStringField />;
@@ -54,6 +55,18 @@ export const WaveformsPanel: React.FC<Props> = ({ options, data, width, height, 
       tension: 0.1,
     });
   });
+
+  const items: VizLegendItem[] = [];
+  if (options.legend.showLegend) {
+    datasets.forEach((ds, idx) => {
+      items.push({
+        label: ds.label,
+        color: ds.borderColor,
+        yAxis: 1,
+        disabled: false,
+      });
+    });
+  }
 
   const coptions = {
     responsive: true,
@@ -113,12 +126,10 @@ export const WaveformsPanel: React.FC<Props> = ({ options, data, width, height, 
         <VizLegend
           placement={options.legend.placement}
           displayMode={options.legend.displayMode}
-          items={datasets.map((ds, i) => ({
-            label: ds.label,
-            color: ds.borderColor,
-            yAxis: 1,
-            disabled: false,
-          }))}
+          items={items}
+          sortBy={options.legend.sortBy}
+          sortDesc={options.legend.sortDesc}
+          isSortable={true}
         />
       }
     >
