@@ -11,8 +11,11 @@
 *node_modules*
 *pkg*
 *src*
+*tests*
+*provitioning*
 *.eslintrc.json
 *.git*
+*.devcontainer*
 *.circleci*
 *.github*
 *.gitignore
@@ -20,3 +23,8 @@
 *.swp
 *exclude.txt
 *exec_tests.sh
+*docker-compose.yaml
+*jest-setup.js
+*.nvmrc
+*.eslintrc
+.cprc.json
