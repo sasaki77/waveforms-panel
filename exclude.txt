@@ -12,7 +12,7 @@
 *pkg*
 *src*
 *tests*
-*provitioning*
+*provisioning*
 *.eslintrc.json
 *.git*
 *.devcontainer*
@@ -27,4 +27,4 @@
 *jest-setup.js
 *.nvmrc
 *.eslintrc
-.cprc.json
+*.cprc.json
