@@ -27,6 +27,9 @@ export const WaveformsPanel: React.FC<Props> = ({ options, data, width, height, 
   const [index, setIndex] = useState(0);
   const styles = useStyles2(getStyles);
   const theme = useTheme2();
+
+  const sliderWidthBorder = 600;
+
   if (data.series.length === 0) {
     return <PanelDataErrorView fieldConfig={fieldConfig} panelId={id} data={data} needsStringField />;
   }
@@ -175,12 +178,19 @@ export const WaveformsPanel: React.FC<Props> = ({ options, data, width, height, 
           <div style={{ width: w, height: h - 50 }}>
             <Line data={{ datasets }} options={coptions} />
           </div>
-          <div style={{ width: w - 300, height: 50, marginLeft: 'auto', marginRight: 'auto' }}>
+          <div
+            style={{
+              width: w > sliderWidthBorder ? w - 300 : w * 0.6,
+              height: 50,
+              marginLeft: 'auto',
+              marginRight: 'auto',
+            }}
+          >
             <GrafanaTooltip content={datasets[0].label}>
               <div className={styles.slider}>
                 <Slider
                   included={false}
-                  marks={marks}
+                  marks={w > sliderWidthBorder ? marks : []}
                   max={dlen - 1}
                   min={0}
                   orientation="horizontal"
