@@ -1,0 +1,53 @@
+name: Publish Release
+
+on:
+  push:
+    tags:
+      - 'v[0-9]+.[0-9]+.[0-9]+'
+
+jobs:
+  publish-release:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    env:
+      ZIP_NAME: waveforms-panel
+      NODE_VERSION: '24'
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+        with:
+          submodules: 'recursive'
+
+      - name: Setup NodeJS
+        uses: actions/setup-node@v6
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: Build frontend
+        run: num run build
+
+      - name: Archive Release Files
+        run: |
+          REPO_DIRECTORY=${PWD##*/}
+          pushd ../
+          zip -r $REPO_DIRECTORY/${{ env.ZIP_NAME }}.zip $REPO_DIRECTORY -x @$REPO_DIRECTORY/exclude.txt
+          popd
+
+      - name: Publish GitHub Release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          # Use the tag name from the push event
+          TAG=${{ github.ref_name }}
+
+          gh release create "$TAG" ./${{ env.ZIP_NAME }}.zip \
+            --title "$TAG" \
+            --notes "This release has been automatically generated." \
+            --generate-notes
+            --prerelease
