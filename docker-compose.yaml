@@ -6,7 +6,7 @@ services:
     build:
       args:
         grafana_image: ${GRAFANA_IMAGE:-grafana}
-        grafana_version: ${GRAFANA_VERSION:-12.1.0}
+        grafana_version: ${GRAFANA_VERSION:-12.4.2}
     volumes:
       - grafana-waveforms-storage:/var/lib/grafana
     environment:
