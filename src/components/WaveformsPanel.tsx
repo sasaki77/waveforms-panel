@@ -212,7 +212,6 @@ function makeChartJSOption(options: WaveformsOptions, theme: GrafanaTheme2) {
         },
         ticks: {
           color: 'white',
-          stepSize: 1,
         },
         grid: {
           color: theme.colors.border.weak,
