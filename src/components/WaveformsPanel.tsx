@@ -1,5 +1,5 @@
 import { css } from '@emotion/css';
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import {
   VizLayout,
   VizLegend,
@@ -31,13 +31,24 @@ import zoomPlugin from 'chartjs-plugin-zoom';
 ChartJS.register(LineElement, PointElement, LinearScale, Tooltip, zoomPlugin);
 
 interface Props extends PanelProps<WaveformsOptions> {}
+const sliderWidthBorder = 600;
 
 export const WaveformsPanel: React.FC<Props> = ({ options, data, width, height, fieldConfig, id, onOptionsChange }) => {
   const [index, setIndex] = useState(0);
   const styles = useStyles2(getStyles);
   const theme = useTheme2();
 
-  const sliderWidthBorder = 600;
+  const chartdata = useMemo<ChartData<'line'>>(() => {
+    return makeChartData(options, data.series, index);
+  }, [options, data.series, index]);
+
+  const items = useMemo<VizLegendItem[]>(() => {
+    return makeLegendItems(chartdata, options.legend.showLegend);
+  }, [chartdata, options.legend.showLegend]);
+
+  const coptions = useMemo(() => {
+    return makeChartJSOption(options, theme);
+  }, [options, theme]);
 
   if (data.series.length === 0) {
     return <PanelDataErrorView fieldConfig={fieldConfig} panelId={id} data={data} needsStringField />;
@@ -50,9 +61,6 @@ export const WaveformsPanel: React.FC<Props> = ({ options, data, width, height, 
     onOptionsChange({ ...options });
   };
 
-  const chartdata: ChartData<'line'> = makeChartData(options, data.series, index);
-  const items: VizLegendItem[] = makeLegendItems(chartdata, options.legend.showLegend);
-  const coptions = makeChartJSOption(options, theme);
   const marks = makeMarks(data.series);
 
   return (
@@ -121,8 +129,13 @@ const getStyles = () => ({
 });
 
 function makeChartData(options: WaveformsOptions, series: DataFrame[], index: number) {
-  const { palette, getColorByName } = config.theme2.visualization;
   const chartdata: ChartData<'line'> = { datasets: [] };
+
+  if (series.length === 0) {
+    return chartdata;
+  }
+
+  const { palette, getColorByName } = config.theme2.visualization;
 
   series.forEach((series, seriesIndex) => {
     const timeField = series.fields[0];
@@ -227,6 +240,10 @@ function makeChartJSOption(options: WaveformsOptions, theme: GrafanaTheme2) {
 
 function makeLegendItems(chartdata: ChartData<'line'>, enable: boolean) {
   if (!enable) {
+    return [];
+  }
+
+  if (chartdata.datasets.length === 0) {
     return [];
   }
 
