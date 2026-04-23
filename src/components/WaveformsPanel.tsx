@@ -58,10 +58,9 @@ export const WaveformsPanel: React.FC<Props> = ({ options, data, width, height, 
 
   const onIndexChange = (value: number) => {
     setIndex(value >= dlen ? dlen - 1 : value || 0);
-    onOptionsChange({ ...options });
   };
 
-  const marks = makeMarks(data.series);
+  const sliderMarks = makeMarks(data.series);
 
   return (
     <VizLayout
@@ -92,15 +91,15 @@ export const WaveformsPanel: React.FC<Props> = ({ options, data, width, height, 
               marginRight: 'auto',
             }}
           >
-            <GrafanaTooltip content={String(chartdata.datasets[0].label)}>
+            <GrafanaTooltip content={chartdata.datasets.length > 0 ? String(chartdata.datasets[0].label) : ''}>
               <div className={styles.slider}>
                 <Slider
                   included={false}
-                  marks={w > sliderWidthBorder ? marks : []}
+                  marks={w > sliderWidthBorder ? sliderMarks : []}
                   max={dlen - 1}
                   min={0}
                   orientation="horizontal"
-                  value={0}
+                  value={index}
                   onChange={onIndexChange}
                   showInput={false}
                   inputId=""
@@ -202,9 +201,6 @@ function makeChartJSOption(options: WaveformsOptions, theme: GrafanaTheme2) {
     scales: {
       x: {
         type: 'linear' as const,
-        time: {
-          unit: 'minute' as const,
-        },
         title: {
           display: true,
           text: 'Index',
@@ -212,6 +208,7 @@ function makeChartJSOption(options: WaveformsOptions, theme: GrafanaTheme2) {
         },
         ticks: {
           color: 'white',
+          precision: 0,
         },
         grid: {
           color: theme.colors.border.weak,
@@ -260,6 +257,10 @@ function makeLegendItems(chartdata: ChartData<'line'>, enable: boolean) {
 }
 
 function makeMarks(series: DataFrame[]) {
+  if (series.length === 0) {
+    return {};
+  }
+
   const dlen = series[0].fields.length - 1;
   const marks = {
     '0': [series[0].fields[1].name],
