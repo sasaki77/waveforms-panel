@@ -9,12 +9,21 @@ import {
   useTheme2,
   useStyles2,
 } from '@grafana/ui';
-import { PanelProps } from '@grafana/data';
+import { PanelProps, GrafanaTheme2, DataFrame } from '@grafana/data';
 import { WaveformsOptions } from 'types';
 import { config, PanelDataErrorView } from '@grafana/runtime';
 
 import { Line } from 'react-chartjs-2';
-import { Chart as ChartJS, LineElement, PointElement, LinearScale, Tooltip, ChartEvent, ActiveElement } from 'chart.js';
+import {
+  Chart as ChartJS,
+  ChartData,
+  LineElement,
+  PointElement,
+  LinearScale,
+  Tooltip,
+  ChartEvent,
+  ActiveElement,
+} from 'chart.js';
 import 'chartjs-adapter-date-fns';
 
 import zoomPlugin from 'chartjs-plugin-zoom';
@@ -41,15 +50,81 @@ export const WaveformsPanel: React.FC<Props> = ({ options, data, width, height, 
     onOptionsChange({ ...options });
   };
 
-  const datasets: any[] = [];
+  const chartdata: ChartData<'line'> = makeChartData(options, data.series, index);
+  const items: VizLegendItem[] = makeLegendItems(chartdata, options.legend.showLegend);
+  const coptions = makeChartJSOption(options, theme);
+  const marks = makeMarks(data.series);
+
+  return (
+    <VizLayout
+      width={width}
+      height={height}
+      legend={
+        <VizLegend
+          className={styles.legend}
+          placement={options.legend.placement}
+          displayMode={options.legend.displayMode}
+          items={items}
+          sortBy={options.legend.sortBy}
+          sortDesc={options.legend.sortDesc}
+          isSortable={true}
+        />
+      }
+    >
+      {(w, h) => (
+        <div style={{ width: w, height: h }}>
+          <div style={{ width: w, height: h - 50 }}>
+            <Line data={chartdata} options={coptions} />
+          </div>
+          <div
+            style={{
+              width: w > sliderWidthBorder ? w - 300 : w * 0.6,
+              height: 50,
+              marginLeft: 'auto',
+              marginRight: 'auto',
+            }}
+          >
+            <GrafanaTooltip content={String(chartdata.datasets[0].label)}>
+              <div className={styles.slider}>
+                <Slider
+                  included={false}
+                  marks={w > sliderWidthBorder ? marks : []}
+                  max={dlen - 1}
+                  min={0}
+                  orientation="horizontal"
+                  value={0}
+                  onChange={onIndexChange}
+                  showInput={false}
+                  inputId=""
+                />
+              </div>
+            </GrafanaTooltip>
+          </div>
+        </div>
+      )}
+    </VizLayout>
+  );
+};
+
+const getStyles = () => ({
+  legend: css({
+    div: {
+      justifyContent: 'flex-start',
+    },
+  }),
+
+  slider: css({
+    '.rc-slider-mark-text': {
+      whiteSpace: 'nowrap',
+    },
+  }),
+});
+
+function makeChartData(options: WaveformsOptions, series: DataFrame[], index: number) {
   const { palette, getColorByName } = config.theme2.visualization;
+  const chartdata: ChartData<'line'> = { datasets: [] };
 
-  const marks = {
-    '0': [data.series[0].fields[1].name],
-    [dlen - 1]: [data.series[0].fields[dlen].name],
-  };
-
-  data.series.forEach((series, seriesIndex) => {
+  series.forEach((series, seriesIndex) => {
     const timeField = series.fields[0];
     const valueFields = series.fields[index + 1];
 
@@ -61,7 +136,7 @@ export const WaveformsPanel: React.FC<Props> = ({ options, data, width, height, 
       y: valueValues[i],
     }));
 
-    datasets.push({
+    chartdata.datasets.push({
       type: 'line',
       label: `${series.name ?? 'Series'} - ${valueFields.name}`,
       data: dataPoints,
@@ -74,19 +149,11 @@ export const WaveformsPanel: React.FC<Props> = ({ options, data, width, height, 
     });
   });
 
-  const items: VizLegendItem[] = [];
-  if (options.legend.showLegend) {
-    datasets.forEach((ds, idx) => {
-      items.push({
-        label: ds.label,
-        color: ds.borderColor,
-        yAxis: 1,
-        disabled: false,
-      });
-    });
-  }
+  return chartdata;
+}
 
-  const coptions = {
+function makeChartJSOption(options: WaveformsOptions, theme: GrafanaTheme2) {
+  return {
     responsive: true,
     // Disable animation
     animation: {
@@ -156,68 +223,32 @@ export const WaveformsPanel: React.FC<Props> = ({ options, data, width, height, 
       chart.resetZoom();
     },
   };
+}
 
-  return (
-    <VizLayout
-      width={width}
-      height={height}
-      legend={
-        <VizLegend
-          className={styles.legend}
-          placement={options.legend.placement}
-          displayMode={options.legend.displayMode}
-          items={items}
-          sortBy={options.legend.sortBy}
-          sortDesc={options.legend.sortDesc}
-          isSortable={true}
-        />
-      }
-    >
-      {(w, h) => (
-        <div style={{ width: w, height: h }}>
-          <div style={{ width: w, height: h - 50 }}>
-            <Line data={{ datasets }} options={coptions} />
-          </div>
-          <div
-            style={{
-              width: w > sliderWidthBorder ? w - 300 : w * 0.6,
-              height: 50,
-              marginLeft: 'auto',
-              marginRight: 'auto',
-            }}
-          >
-            <GrafanaTooltip content={datasets[0].label}>
-              <div className={styles.slider}>
-                <Slider
-                  included={false}
-                  marks={w > sliderWidthBorder ? marks : []}
-                  max={dlen - 1}
-                  min={0}
-                  orientation="horizontal"
-                  value={0}
-                  onChange={onIndexChange}
-                  showInput={false}
-                  inputId=""
-                />
-              </div>
-            </GrafanaTooltip>
-          </div>
-        </div>
-      )}
-    </VizLayout>
-  );
-};
+function makeLegendItems(chartdata: ChartData<'line'>, enable: boolean) {
+  if (!enable) {
+    return [];
+  }
 
-const getStyles = () => ({
-  legend: css({
-    div: {
-      justifyContent: 'flex-start',
-    },
-  }),
+  const items: VizLegendItem[] = [];
+  chartdata.datasets.forEach((ds, idx) => {
+    items.push({
+      label: String(ds.label),
+      color: String(ds.borderColor),
+      yAxis: 1,
+      disabled: false,
+    });
+  });
 
-  slider: css({
-    '.rc-slider-mark-text': {
-      whiteSpace: 'nowrap',
-    },
-  }),
-});
+  return items;
+}
+
+function makeMarks(series: DataFrame[]) {
+  const dlen = series[0].fields.length - 1;
+  const marks = {
+    '0': [series[0].fields[1].name],
+    [dlen - 1]: [series[0].fields[dlen].name],
+  };
+
+  return marks;
+}
