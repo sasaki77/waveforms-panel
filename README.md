@@ -13,10 +13,11 @@ Internally, waveform rendering is implemented using [Chart.js](https://www.chart
 ## Features
 
 - **Time selection with slider**
-  Select and display array data at an arbitrary timestamp using a time slider.
+  - Select and display array data at an arbitrary timestamp using a time slider.
 
 - **Interactive zoom with drag and click reset**
-  Zoom into a specific range of the waveform by dragging over the display area, and reset the zoom to the full view with a single click.
+  - Zoom into a specific range of the waveform by dragging over the display area.
+  - Reset the zoom to the full view with a single click.
 
 ## Installing the plugin with Grafana CLI
 
@@ -54,7 +55,8 @@ Example:
 
 In this representation, each time column corresponds to one waveform, and the index column defines the sample position within the waveform.
 
-⚠️ This panel is optimized for this specific table layout and may not work correctly with generic time series formats.
+> [!WARNING]
+> This panel is optimized for this specific table layout and may not work correctly with generic time series formats.
 
 ## Development setup
 
