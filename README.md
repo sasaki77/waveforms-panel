@@ -28,6 +28,9 @@ grafana cli --pluginUrl https://github.com/sasaki77/waveforms-panel/releases/lat
 
 # Install particular version. This example will install v1.0.0.
 grafana cli --pluginUrl https://github.com/sasaki77/waveforms-panel/releases/download/v1.0.0/sasaki77-waveforms-panel.zip plugins install sasaki77-waveforms-panel
+
+# Install the main snapshot.
+grafana cli --pluginUrl https://github.com/sasaki77/waveforms-panel/releases/download/main-snapshot/sasaki77-waveforms-panel.zip plugins install sasaki77-waveforms-panel
 ```
 2. This plugin is unsigned. It must be specially listed by name in the Grafana `grafana.ini` file to allow Grafana to use it. Add `sasaki77-waveforms-panel` to the `allow_loading_unsigned_plugins` parameter in the `[plugins]` section. See [Configure Grafana | Grafana documentation](https://grafana.com/docs/grafana/latest/setup-grafana/configure-grafana/) for more detail on `grafana.ini`.
 
