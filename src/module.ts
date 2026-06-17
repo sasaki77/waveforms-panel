@@ -5,6 +5,18 @@ import { WaveformsPanel } from './components/WaveformsPanel';
 
 export const plugin = new PanelPlugin<WaveformsOptions>(WaveformsPanel).setPanelOptions((builder) => {
   builder
+    .addRadio({
+      path: 'displayMode',
+      name: 'Display mode',
+      defaultValue: 'both',
+      settings: {
+        options: [
+          { value: 'both', label: 'Both' },
+          { value: 'line', label: 'Line' },
+          { value: 'point', label: 'Points' },
+        ],
+      },
+    })
     .addSliderInput({
       path: 'lineWidth',
       name: 'Line width',

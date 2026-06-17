@@ -148,15 +148,39 @@ function makeChartData(options: WaveformsOptions, series: DataFrame[], index: nu
       y: valueValues[i],
     }));
 
+    let showLine = true;
+    let borderWidth = options.lineWidth;
+    let pointRadius = options.pointSize;
+
+    switch (options.displayMode) {
+      case 'line':
+        showLine = true;
+        pointRadius = 0;
+        break;
+
+      case 'point':
+        showLine = false;
+        break;
+
+      case 'both':
+      default:
+        showLine = true;
+        break;
+    }
+
+    const color = getColorByName(palette[seriesIndex]);
     chartdata.datasets.push({
       type: 'line',
       label: `${series.name ?? 'Series'} - ${valueFields.name}`,
       data: dataPoints,
-      showLine: true,
+      showLine,
+      borderWidth,
+      pointRadius,
       fill: false,
-      borderWidth: options.lineWidth,
-      pointRadius: options.pointSize,
-      borderColor: getColorByName(palette[seriesIndex]),
+      pointStyle: 'circle',
+      pointBackgroundColor: color,
+      pointBorderWidth: 1,
+      borderColor: color,
       tension: 0.1,
     });
   });
