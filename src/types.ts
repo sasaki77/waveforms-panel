@@ -4,4 +4,6 @@ export interface WaveformsOptions extends common.OptionsWithLegend {
   lineWidth: number;
   pointSize: number;
   axisLabel: string;
+
+  displayMode: 'line' | 'point' | 'both';
 }
