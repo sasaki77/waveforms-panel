@@ -86,7 +86,10 @@ export const WaveformsPanel: React.FC<Props> = ({ options, data, width, height, 
           isSortable={true}
           onLabelClick={(item, event) => {
             const ctrl = event?.ctrlKey || event?.metaKey; // support macOS cmd key
-            const clickedKey = (item as any).data.custom.key;
+            const clickedKey = (item as any).data?.custom?.key;
+            if (!clickedKey) {
+              return;
+            }
 
             const allKeys = (chartdata.datasets as WaveformDataset[]).map((d) => d.custom.key);
 
