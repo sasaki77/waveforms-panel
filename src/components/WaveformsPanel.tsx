@@ -17,6 +17,7 @@ import { Line } from 'react-chartjs-2';
 import {
   Chart as ChartJS,
   ChartData,
+  ChartDataset,
   LineElement,
   PointElement,
   LinearScale,
@@ -30,17 +31,25 @@ import zoomPlugin from 'chartjs-plugin-zoom';
 
 ChartJS.register(LineElement, PointElement, LinearScale, Tooltip, zoomPlugin);
 
+/** Custom dataset with additional metadata */
+type WaveformDataset = ChartDataset<'line'> & {
+  custom: {
+    key: string;
+  };
+};
+
 interface Props extends PanelProps<WaveformsOptions> {}
 const sliderWidthBorder = 600;
 
 export const WaveformsPanel: React.FC<Props> = ({ options, data, width, height, fieldConfig, id, onOptionsChange }) => {
   const [index, setIndex] = useState(0);
+  const [hiddenSeries, setHiddenSeries] = useState<Record<string, boolean>>({});
   const styles = useStyles2(getStyles);
   const theme = useTheme2();
 
   const chartdata = useMemo<ChartData<'line'>>(() => {
-    return makeChartData(options, data.series, index);
-  }, [options, data.series, index]);
+    return makeChartData(options, data.series, index, hiddenSeries);
+  }, [options, data.series, index, hiddenSeries]);
 
   const items = useMemo<VizLegendItem[]>(() => {
     return makeLegendItems(chartdata, options.legend.showLegend);
@@ -75,6 +84,17 @@ export const WaveformsPanel: React.FC<Props> = ({ options, data, width, height, 
           sortBy={options.legend.sortBy}
           sortDesc={options.legend.sortDesc}
           isSortable={true}
+          onLabelClick={(item, event) => {
+            const ctrl = event?.ctrlKey || event?.metaKey; // support macOS cmd key
+            const clickedKey = (item as any).data?.custom?.key;
+            if (!clickedKey) {
+              return;
+            }
+
+            const allKeys = (chartdata.datasets as WaveformDataset[]).map((d) => d.custom.key);
+
+            setHiddenSeries((prev) => updateHiddenSeries(prev, clickedKey, allKeys, ctrl));
+          }}
         />
       }
     >
@@ -127,65 +147,55 @@ const getStyles = () => ({
   }),
 });
 
-function makeChartData(options: WaveformsOptions, series: DataFrame[], index: number) {
-  const chartdata: ChartData<'line'> = { datasets: [] };
-
-  if (series.length === 0) {
-    return chartdata;
-  }
-
+function makeChartData(
+  options: WaveformsOptions,
+  series: DataFrame[],
+  index: number,
+  hiddenSeries: Record<string, boolean>
+) {
   const { palette, getColorByName } = config.theme2.visualization;
 
-  series.forEach((series, seriesIndex) => {
-    const timeField = series.fields[0];
-    const valueFields = series.fields[index + 1];
+  const datasets: WaveformDataset[] = series.map((s, i) => {
+    const timeField = s.fields[0];
+    const valueField = s.fields[index + 1];
 
-    const timeValues = Array.from(timeField.values) ?? [];
-
-    const valueValues = Array.from(valueFields.values);
-    const dataPoints = timeValues.map((time, i) => ({
+    const data = Array.from(timeField.values).map((time, j) => ({
       x: time,
-      y: valueValues[i],
+      y: valueField.values[j],
     }));
 
-    let showLine = true;
-    let borderWidth = options.lineWidth;
-    let pointRadius = options.pointSize;
+    const key = s.refId ?? s.name ?? `series-${i}`;
+    const label = `${s.name ?? 'Series'} - ${valueField.name}`;
 
-    switch (options.displayMode) {
-      case 'line':
-        showLine = true;
-        pointRadius = 0;
-        break;
+    const hidden = hiddenSeries[key] === true;
 
-      case 'point':
-        showLine = false;
-        break;
+    const color = getColorByName(palette[i]);
 
-      case 'both':
-      default:
-        showLine = true;
-        break;
-    }
+    const showLine = options.displayMode !== 'point';
+    const pointRadius = options.displayMode === 'line' ? 0 : options.pointSize;
 
-    const color = getColorByName(palette[seriesIndex]);
-    chartdata.datasets.push({
+    return {
       type: 'line',
-      label: `${series.name ?? 'Series'} - ${valueFields.name}`,
-      data: dataPoints,
+      label,
+      data,
+
+      custom: { key },
+
       showLine,
-      borderWidth,
+      borderWidth: options.lineWidth,
       pointRadius,
-      fill: false,
-      pointStyle: 'circle',
-      pointBackgroundColor: color,
-      pointBorderWidth: 1,
+      hidden,
+
       borderColor: color,
+      pointBackgroundColor: color,
+      pointBorderColor: color,
+      pointBorderWidth: 1,
+
       tension: 0.1,
-    });
+    };
   });
 
-  return chartdata;
+  return { datasets };
 }
 
 function makeChartJSOption(options: WaveformsOptions, theme: GrafanaTheme2) {
@@ -263,21 +273,13 @@ function makeLegendItems(chartdata: ChartData<'line'>, enable: boolean) {
     return [];
   }
 
-  if (chartdata.datasets.length === 0) {
-    return [];
-  }
-
-  const items: VizLegendItem[] = [];
-  chartdata.datasets.forEach((ds, idx) => {
-    items.push({
-      label: String(ds.label),
-      color: String(ds.borderColor),
-      yAxis: 1,
-      disabled: false,
-    });
-  });
-
-  return items;
+  return (chartdata.datasets as WaveformDataset[]).map((ds) => ({
+    label: String(ds.label),
+    color: String(ds.borderColor),
+    yAxis: 1,
+    disabled: ds.hidden,
+    data: { custom: ds.custom },
+  }));
 }
 
 function makeMarks(series: DataFrame[]) {
@@ -292,4 +294,42 @@ function makeMarks(series: DataFrame[]) {
   };
 
   return marks;
+}
+
+// Update hidden series state based on click behavior
+function updateHiddenSeries(
+  prev: Record<string, boolean>,
+  clickedKey: string,
+  allKeys: string[],
+  ctrl: boolean
+): Record<string, boolean> {
+  // Ctrl/Cmd: toggle
+  if (ctrl) {
+    const next = { ...prev };
+    if (next[clickedKey]) {
+      delete next[clickedKey];
+    } else {
+      next[clickedKey] = true;
+    }
+    return next;
+  }
+
+  const visibleKeys = allKeys.filter((k) => !prev[k]);
+
+  const isOnlyThisVisible = visibleKeys.length === 1 && visibleKeys[0] === clickedKey;
+
+  // already isolated → reset
+  if (isOnlyThisVisible) {
+    return {};
+  }
+
+  // isolate
+  const next: Record<string, boolean> = {};
+  allKeys.forEach((k) => {
+    if (k !== clickedKey) {
+      next[k] = true;
+    }
+  });
+
+  return next;
 }
