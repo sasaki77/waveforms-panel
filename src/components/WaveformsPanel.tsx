@@ -1,5 +1,5 @@
 import { css } from '@emotion/css';
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import {
   VizLayout,
   VizLegend,
@@ -44,6 +44,7 @@ const sliderWidthBorder = 600;
 export const WaveformsPanel: React.FC<Props> = ({ options, data, width, height, fieldConfig, id, onOptionsChange }) => {
   const [index, setIndex] = useState(0);
   const [hiddenSeries, setHiddenSeries] = useState<Record<string, boolean>>({});
+  const [isSliderDragging, setIsSliderDragging] = useState(false);
   const styles = useStyles2(getStyles);
   const theme = useTheme2();
 
@@ -58,6 +59,24 @@ export const WaveformsPanel: React.FC<Props> = ({ options, data, width, height, 
   const coptions = useMemo(() => {
     return makeChartJSOption(options, theme);
   }, [options, theme]);
+
+  // Keep the tooltip open while the slider handle is dragged, even if the
+  // pointer leaves the slider area.
+  useEffect(() => {
+    if (!isSliderDragging) {
+      return;
+    }
+
+    const stopDragging = () => setIsSliderDragging(false);
+
+    window.addEventListener('pointerup', stopDragging);
+    window.addEventListener('pointercancel', stopDragging);
+
+    return () => {
+      window.removeEventListener('pointerup', stopDragging);
+      window.removeEventListener('pointercancel', stopDragging);
+    };
+  }, [isSliderDragging]);
 
   if (data.series.length === 0) {
     return <PanelDataErrorView fieldConfig={fieldConfig} panelId={id} data={data} needsStringField />;
@@ -110,8 +129,15 @@ export const WaveformsPanel: React.FC<Props> = ({ options, data, width, height, 
               marginLeft: 'auto',
               marginRight: 'auto',
             }}
+            // Tooltip overwrites the handlers of its child element, so the drag
+            // start is detected on this wrapper instead.
+            onPointerDown={() => setIsSliderDragging(true)}
           >
-            <GrafanaTooltip content={chartdata.datasets.length > 0 ? String(chartdata.datasets[0].label) : ''}>
+            <GrafanaTooltip
+              content={chartdata.datasets.length > 0 ? String(chartdata.datasets[0].label) : ''}
+              // `undefined` restores the default hover behaviour
+              show={isSliderDragging || undefined}
+            >
               <div className={styles.slider}>
                 <Slider
                   included={false}
