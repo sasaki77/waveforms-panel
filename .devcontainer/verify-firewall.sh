@@ -220,14 +220,18 @@ check_connectivity() {
     fi
 
     # Port 9 on ::1 is closed, so an allowed packet is refused immediately
-    # (curl exit 7) while a dropped one times out (exit 28). Do not use ping6
-    # here: it does not exist on Ubuntu 24.04 and its absence looks like a
-    # firewall block.
-    curl -s --connect-timeout 3 -o /dev/null "http://[::1]:9/" 2>/dev/null
-    case $? in
-        7) ok "IPv6 loopback reachable (connection refused, not dropped)" ;;
+    # (curl exit 7) while a dropped one times out (exit 28). --noproxy keeps a
+    # proxy setting from turning this into a probe of the proxy instead. Any
+    # other exit code means the probe never established what it set out to, so
+    # report it rather than passing. Do not use ping6 here: it does not exist
+    # on Ubuntu 24.04 and its absence looks like a firewall block.
+    local rc
+    curl -s --noproxy '*' --connect-timeout 3 -o /dev/null "http://[::1]:9/" 2>/dev/null
+    rc=$?
+    case "$rc" in
+        0 | 7) ok "IPv6 loopback reachable (connection refused, not dropped)" ;;
         28) ng "IPv6 loopback timed out (localhost via ::1 is blocked)" ;;
-        *) ok "IPv6 loopback reachable" ;;
+        *) ng "IPv6 loopback probe inconclusive (curl exit ${rc})" ;;
     esac
 }
 
