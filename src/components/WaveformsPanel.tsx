@@ -290,7 +290,11 @@ function makeChartData(
       pointBorderColor: color,
       pointBorderWidth: 1,
 
-      tension: 0.1,
+      // Straight segments. A non-zero tension would make Chart.js compute Bezier
+      // control points on every update, draw with bezierCurveTo instead of
+      // lineTo, and skip its fast path for dense lines entirely — and the curve
+      // would show values that were never sampled.
+      tension: 0,
     };
   });
 
