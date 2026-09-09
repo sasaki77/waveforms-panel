@@ -26,7 +26,6 @@ import {
   ChartEvent,
   ActiveElement,
 } from 'chart.js';
-import 'chartjs-adapter-date-fns';
 
 import zoomPlugin from 'chartjs-plugin-zoom';
 
