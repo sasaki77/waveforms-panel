@@ -18,6 +18,7 @@ import {
   Chart as ChartJS,
   ChartData,
   ChartDataset,
+  Decimation,
   LineElement,
   PointElement,
   LinearScale,
@@ -25,11 +26,10 @@ import {
   ChartEvent,
   ActiveElement,
 } from 'chart.js';
-import 'chartjs-adapter-date-fns';
 
 import zoomPlugin from 'chartjs-plugin-zoom';
 
-ChartJS.register(LineElement, PointElement, LinearScale, Tooltip, zoomPlugin);
+ChartJS.register(LineElement, PointElement, LinearScale, Tooltip, Decimation, zoomPlugin);
 
 /** Custom dataset with additional metadata */
 type WaveformDataset = ChartDataset<'line'> & {
@@ -37,6 +37,28 @@ type WaveformDataset = ChartDataset<'line'> & {
     key: string;
   };
 };
+
+/** A Chart.js point in the pre-parsed form the chart consumes directly. */
+type WaveformPoint = { x: number; y: number };
+
+/**
+ * Per-series scratch space, rebuilt only when new query results arrive.
+ *
+ * The x values (the index column) are shared by every timestamp column, so the
+ * point objects are allocated once and reused: scrubbing the slider overwrites
+ * `y` in place instead of allocating a new object per point per frame.
+ */
+type SeriesBuffer = {
+  key: string;
+  name: string;
+  frame: DataFrame;
+  points: WaveformPoint[];
+  /** Whether the index column ascends, which is what `normalized` promises Chart.js. */
+  sorted: boolean;
+};
+
+/** Shared placeholder for hidden series so Chart.js has nothing to parse. */
+const EMPTY_POINTS: WaveformPoint[] = [];
 
 interface Props extends PanelProps<WaveformsOptions> {}
 const sliderWidthBorder = 600;
@@ -48,17 +70,31 @@ export const WaveformsPanel: React.FC<Props> = ({ options, data, width, height, 
   const styles = useStyles2(getStyles);
   const theme = useTheme2();
 
+  const { displayMode, lineWidth, pointSize } = options;
+
+  const buffers = useMemo(() => makeSeriesBuffers(data.series), [data.series]);
+
   const chartdata = useMemo<ChartData<'line'>>(() => {
-    return makeChartData(options, data.series, index, hiddenSeries);
-  }, [options, data.series, index, hiddenSeries]);
+    return makeChartData(buffers, index, hiddenSeries, displayMode, lineWidth, pointSize);
+  }, [buffers, index, hiddenSeries, displayMode, lineWidth, pointSize]);
 
   const items = useMemo<VizLegendItem[]>(() => {
     return makeLegendItems(chartdata, options.legend.showLegend);
   }, [chartdata, options.legend.showLegend]);
 
+  // `parsing: false` is a chart-wide switch, so it may only be claimed when
+  // every index column ascends, not just some of them.
+  const sorted = useMemo(() => buffers.every((buffer) => buffer.sorted), [buffers]);
+
+  // Decimation locates the visible range by binary search, so it needs the same
+  // guarantee.
+  const decimation = options.decimation && sorted;
+
   const coptions = useMemo(() => {
-    return makeChartJSOption(options, theme);
-  }, [options, theme]);
+    return makeChartJSOption(options, theme, decimation, sorted);
+  }, [options, theme, decimation, sorted]);
+
+  const sliderMarks = useMemo(() => makeMarks(data.series), [data.series]);
 
   // Keep the tooltip open while the slider handle is dragged, even if the
   // pointer leaves the slider area.
@@ -87,8 +123,6 @@ export const WaveformsPanel: React.FC<Props> = ({ options, data, width, height, 
   const onIndexChange = (value: number) => {
     setIndex(value >= dlen ? dlen - 1 : value || 0);
   };
-
-  const sliderMarks = makeMarks(data.series);
 
   return (
     <VizLayout
@@ -173,42 +207,89 @@ const getStyles = () => ({
   }),
 });
 
+/**
+ * True when every value is strictly greater than the one before it.
+ *
+ * Phrased as `>` rather than the inverse `<=` so that a NaN anywhere in the
+ * column makes this false: NaN compares false either way, and reporting such a
+ * column as sorted would hand Chart.js a `normalized` promise we cannot keep.
+ */
+function isAscending(values: number[]) {
+  return values.every((value, i) => i === 0 || value > values[i - 1]);
+}
+
+/**
+ * Allocates the reusable point objects for each series. The x values come from
+ * the index column, which is shared by every waveform in the frame; y is filled
+ * in by `makeChartData` for whichever timestamp column is currently selected.
+ */
+function makeSeriesBuffers(series: DataFrame[]): SeriesBuffer[] {
+  return series.map((s, i) => {
+    const indexValues = s.fields[0].values;
+    const points: WaveformPoint[] = new Array(indexValues.length);
+
+    for (let j = 0; j < indexValues.length; j++) {
+      points[j] = { x: indexValues[j], y: NaN };
+    }
+
+    return {
+      key: s.refId ?? s.name ?? `series-${i}`,
+      name: s.name ?? 'Series',
+      frame: s,
+      points,
+      sorted: isAscending(indexValues),
+    };
+  });
+}
+
+/**
+ * Overwrites the reused point buffer with the selected timestamp column and
+ * returns it. Reusing the objects is what keeps scrubbing the slider free of
+ * per-point allocation.
+ */
+function fillPoints(points: WaveformPoint[], values: number[]) {
+  for (let i = 0; i < points.length; i++) {
+    points[i].y = values[i];
+  }
+
+  return points;
+}
+
 function makeChartData(
-  options: WaveformsOptions,
-  series: DataFrame[],
+  buffers: SeriesBuffer[],
   index: number,
-  hiddenSeries: Record<string, boolean>
+  hiddenSeries: Record<string, boolean>,
+  displayMode: WaveformsOptions['displayMode'],
+  lineWidth: number,
+  pointSize: number
 ) {
   const { palette, getColorByName } = config.theme2.visualization;
 
-  const datasets: WaveformDataset[] = series.map((s, i) => {
-    const timeField = s.fields[0];
-    const valueField = s.fields[index + 1];
+  const showLine = displayMode !== 'point';
+  const pointRadius = displayMode === 'line' ? 0 : pointSize;
 
-    const data = Array.from(timeField.values).map((time, j) => ({
-      x: time,
-      y: valueField.values[j],
-    }));
-
-    const key = s.refId ?? s.name ?? `series-${i}`;
-    const label = `${s.name ?? 'Series'} - ${valueField.name}`;
-
-    const hidden = hiddenSeries[key] === true;
-
+  const datasets: WaveformDataset[] = buffers.map((buffer, i) => {
+    const valueField = buffer.frame.fields[index + 1];
+    const hidden = hiddenSeries[buffer.key] === true;
     const color = getColorByName(palette[i]);
-
-    const showLine = options.displayMode !== 'point';
-    const pointRadius = options.displayMode === 'line' ? 0 : options.pointSize;
 
     return {
       type: 'line',
-      label,
-      data,
+      label: `${buffer.name} - ${valueField.name}`,
 
-      custom: { key },
+      // A hidden series is still parsed and updated by Chart.js, so hand it an
+      // empty array rather than the real points.
+      data: hidden ? EMPTY_POINTS : fillPoints(buffer.points, valueField.values),
+
+      // The points are already in Chart.js' internal shape, so `parsing: false`
+      // (set on the chart) lets it use this array as-is. `normalized` additionally
+      // skips the sort check, but only holds when the index column ascends.
+      normalized: buffer.sorted,
+
+      custom: { key: buffer.key },
 
       showLine,
-      borderWidth: options.lineWidth,
+      borderWidth: lineWidth,
       pointRadius,
       hidden,
 
@@ -217,14 +298,18 @@ function makeChartData(
       pointBorderColor: color,
       pointBorderWidth: 1,
 
-      tension: 0.1,
+      // Straight segments. A non-zero tension would make Chart.js compute Bezier
+      // control points on every update, draw with bezierCurveTo instead of
+      // lineTo, and skip its fast path for dense lines entirely — and the curve
+      // would show values that were never sampled.
+      tension: 0,
     };
   });
 
   return { datasets };
 }
 
-function makeChartJSOption(options: WaveformsOptions, theme: GrafanaTheme2) {
+function makeChartJSOption(options: WaveformsOptions, theme: GrafanaTheme2, decimation: boolean, sorted: boolean) {
   return {
     responsive: true,
     // Disable animation
@@ -232,11 +317,26 @@ function makeChartJSOption(options: WaveformsOptions, theme: GrafanaTheme2) {
       duration: 0,
     },
 
+    // Datasets are built as {x, y} objects already, so `false` lets Chart.js adopt
+    // them as-is instead of parsing every point into a copy. It also reads that as
+    // a promise that x ascends: it marks the data sorted without checking, and
+    // then takes the x range from the first and last point alone. Where that does
+    // not hold, fall back to parsing the same keys it would use by default.
+    parsing: sorted ? (false as const) : { xAxisKey: 'x', yAxisKey: 'y' },
+
     maintainAspectRatio: false,
 
     plugins: {
       legend: {
         display: false,
+      },
+
+      // Chart.js only steps in past 4x the canvas width, so this stays a no-op
+      // for waveforms the panel can draw point for point. 'min-max' keeps the
+      // extremes of each pixel column, which is what preserves narrow spikes.
+      decimation: {
+        enabled: decimation,
+        algorithm: 'min-max' as const,
       },
 
       zoom: {

@@ -10,7 +10,8 @@
     "lint": "eslint --cache --ignore-path ./.gitignore --ext .js,.jsx,.ts,.tsx .",
     "lint:fix": "npm run lint -- --fix && prettier --write --list-different .",
     "e2e": "playwright test",
-    "server": "docker compose up --build",
+    "benchmark:gen": "node scripts/gen-benchmark-dashboard.js",
+    "server": "npm run benchmark:gen && docker compose up --build",
     "sign": "npx --yes @grafana/sign-plugin@latest"
   },
   "author": "Sasaki77",
@@ -72,9 +73,7 @@
     "@grafana/schema": "12.4.2",
     "@grafana/ui": "12.4.2",
     "chart.js": "^4.5.0",
-    "chartjs-adapter-date-fns": "^3.0.0",
     "chartjs-plugin-zoom": "^2.2.0",
-    "date-fns": "^4.1.0",
     "react": "18.2.0",
     "react-chartjs-2": "^5.3.0",
     "react-dom": "18.2.0"

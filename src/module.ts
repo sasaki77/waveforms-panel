@@ -41,6 +41,13 @@ export const plugin = new PanelPlugin<WaveformsOptions>(WaveformsPanel).setPanel
       path: 'axisLabel',
       name: 'Axis label',
       defaultValue: '',
+    })
+    .addBooleanSwitch({
+      path: 'decimation',
+      name: 'Decimation',
+      description:
+        'Speed up waveforms with far more points than the panel has pixels. Peaks are kept, but dropped samples are not reachable by the tooltip.',
+      defaultValue: false,
     });
 
   commonOptionsBuilder.addLegendOptions(builder);
