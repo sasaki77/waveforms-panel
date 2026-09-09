@@ -28,3 +28,4 @@
 *.nvmrc
 *.eslintrc
 *.cprc.json
+*scripts*

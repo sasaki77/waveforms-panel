@@ -93,6 +93,41 @@ The compose file currently defines a single container:
 
 - `grafana`
 
+Start it with:
+
+```bash
+npm run server
+```
+
+### Benchmarking
+
+Rendering cost grows with (points per waveform) x (number of series), so a provisioned
+dashboard with deliberately large waveforms is available for performance work.
+
+`npm run server` generates it automatically. To regenerate it on its own:
+
+```bash
+npm run benchmark:gen
+```
+
+This writes `provisioning/dashboards/benchmark.json` (a few MB, gitignored) containing
+four panels that vary the two cost dimensions independently:
+
+| Panel | Points per waveform | Series |
+| ----- | ------------------- | ------ |
+| S     | 512                 | 3      |
+| M     | 2,048               | 3      |
+| L     | 8,192               | 3      |
+| W     | 2,048               | 8      |
+
+The dashboard is provisioned as **Waveforms panel benchmark** (uid `waveforms-benchmark`).
+Data is generated from a fixed seed, so the file is byte-identical between runs and
+measurements are comparable across builds. Each waveform contains narrow spikes on
+purpose — they are what any decimation has to preserve.
+
+To measure a different load, edit the `PANELS` table at the top of
+`scripts/gen-benchmark-dashboard.js` and regenerate.
+
 ## License
 
 This project is licensed under the Apache License, Version 2.0.

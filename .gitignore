@@ -44,3 +44,6 @@ ci/
 .idea
 
 .eslintcache
+
+# Generated benchmark fixture (see scripts/gen-benchmark-dashboard.js)
+/provisioning/dashboards/benchmark*.json
