@@ -26,7 +26,7 @@ npm run e2e                    # playwright tests (tests/*.spec.ts) — requires
 
 To run a single Jest test file: `npx jest path/to/file.test.ts` (drop `--watch --onlyChanged` from the npm script).
 
-There is currently one source file under `src/` and no unit tests colocated with it; `tests/panel.spec.ts` is a Playwright e2e test that drives a real Grafana instance (started via `npm run server`) using `@grafana/plugin-e2e` and the dashboard/datasource fixtures in `provisioning/`.
+Unit tests live next to the code they cover as `src/**/*.test.ts` and need no Grafana runtime, so they run in about a second. `tests/panel.spec.ts` is a separate Playwright e2e test that drives a real Grafana instance (started via `npm run server`) using `@grafana/plugin-e2e` and the dashboard/datasource fixtures in `provisioning/`; it only asserts that the panel renders "No data", so the chart, legend and slider are not covered by it.
 
 Note that Docker is **not** available inside the dev container, so `npm run server` / `npm run e2e` must be run on the host.
 
@@ -38,16 +38,21 @@ The fixture uses the testdata `raw_frame` scenario. `rawFrameContent` is parsed 
 
 ## Architecture
 
-The entire plugin logic is small and concentrated in three files under `src/`:
+`src/` is split along the React boundary. Everything under `src/data/` and `src/chart/` is free of React and `@grafana/ui`, and imports `@grafana/data` and `chart.js` for their **types only** — keep it that way, since a runtime import of `@grafana/data` pulls in `date-fns`, which this plugin dropped and which fails under jest. That constraint is also why the tests build `DataFrame`s by hand via `src/data/frames.testutil.ts` instead of using `toDataFrame`.
 
-- **`src/module.ts`** — registers the `PanelPlugin` and declares the panel options schema (display mode, line width, point size, axis label, legend options via `commonOptionsBuilder`). This is what drives the options UI in Grafana's panel editor.
+- **`src/module.ts`** — registers the `PanelPlugin` and declares the panel options schema (display mode, line width, point size, axis label, decimation, legend options via `commonOptionsBuilder`). This is what drives the options UI in Grafana's panel editor.
 - **`src/types.ts`** — `WaveformsOptions` interface, matching the fields registered in `module.ts`.
-- **`src/components/WaveformsPanel.tsx`** — the panel component and all rendering/data-transform logic:
-  - `makeChartData` transforms Grafana `DataFrame[]` (one frame per query/series) into a Chart.js `ChartData` at a given waveform `index` (i.e. a given timestamp column), applying color, per-series hidden state, and display-mode-driven line/point styling. Each dataset carries a `custom.key` (derived from `refId`/`name`) used to correlate legend clicks back to a series.
-  - `makeChartJSOption` builds the Chart.js options object: linear x/y axes, drag-zoom via `chartjs-plugin-zoom` (click resets zoom), animations disabled for responsiveness.
-  - `makeLegendItems` / `updateHiddenSeries` implement custom legend click behavior (click to isolate a series, ctrl/cmd-click to toggle) rather than using Chart.js's or Grafana's built-in legend interactivity directly — `VizLegend` is used for rendering but click handling is custom.
-  - `makeMarks` builds slider tick marks for the first/last waveform (timestamp) using the field names from the first series.
-  - The panel renders a Chart.js `<Line>` chart plus a `Slider` (from `@grafana/ui`) below it that lets the user scrub through the timestamp columns (`index` state) to pick which waveform is displayed. Slider width/marks adapt based on panel width (`sliderWidthBorder`).
+- **`src/data/seriesBuffer.ts`** — `makeSeriesBuffers` allocates one reusable `{x, y}` point array per frame from the index column, and `fillPoints` overwrites `y` in place for the selected timestamp column; hidden series are handed the shared `EMPTY_POINTS` instead. The reuse is what keeps scrubbing the slider free of per-point allocation, so these three belong in one file and the contract is pinned by tests. `isAscending` decides each buffer's `sorted` flag.
+- **`src/data/chartData.ts`** — `makeChartData` builds the Chart.js datasets at a given waveform `index` (i.e. a given timestamp column), applying palette color, per-series hidden state and display-mode-driven line/point styling. Each dataset carries a `custom.key` (derived from `refId`/`name`) used to correlate legend clicks back to a series.
+- **`src/data/legend.ts`** — `makeLegendItems` / `updateHiddenSeries` implement custom legend click behavior (click to isolate a series, ctrl/cmd-click to toggle) rather than using Chart.js's or Grafana's built-in legend interactivity — `VizLegend` renders, but the click handling is ours.
+- **`src/data/marks.ts`** — `makeMarks` builds slider tick marks for the first/last waveform (timestamp) using the field names from the first series.
+- **`src/chart/options.ts`** — `makeChartJSOption` builds the Chart.js options object: linear x/y axes, drag-zoom via `chartjs-plugin-zoom` (click resets zoom), animations disabled for responsiveness, and `parsing`/`decimation` driven by the flags below.
+- **`src/components/`** — `WaveformsPanel.tsx` holds the state (`index`, `hiddenSeries`) and assembles everything; `WaveformsChart.tsx`, `WaveformsLegend.tsx` and `WaveformsSlider.tsx` take props and little else. Two constraints worth knowing:
+  - `VizLayout` destructures the `legend` element's own props to decide the layout and the size it hands the chart, so `WaveformsLegend` must expose `placement` as a top-level prop. Bundling the legend options into a single object leaves `placement` undefined and the chart stops rendering entirely — and the e2e test will not catch it.
+  - `WaveformsSlider` owns its own drag state and exports `SLIDER_HEIGHT`, the vertical space the panel subtracts from the chart height. Slider width and marks adapt based on panel width (`sliderWidthBorder`).
+  - `WaveformsChart` carries the `ChartJS.register(...)` call, because `react-chartjs-2` registers nothing on its own. It reads like a stray statement and neither tsc nor eslint will flag its removal, but without it the first render throws `"linear" is not a registered scale`.
+
+`sorted` is a chart-wide property: `parsing: false` and decimation may only be claimed when *every* index column ascends, so the panel computes it across all buffers rather than per series.
 
 Data flow in one sentence: Grafana passes `data.series: DataFrame[]` for the current query results → `index` (slider state) selects which timestamp column to show → `makeChartData` extracts that column across all series into Chart.js datasets → rendered via `react-chartjs-2`.
 
