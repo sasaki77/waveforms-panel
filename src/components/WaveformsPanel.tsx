@@ -18,6 +18,7 @@ import {
   Chart as ChartJS,
   ChartData,
   ChartDataset,
+  Decimation,
   LineElement,
   PointElement,
   LinearScale,
@@ -29,7 +30,7 @@ import 'chartjs-adapter-date-fns';
 
 import zoomPlugin from 'chartjs-plugin-zoom';
 
-ChartJS.register(LineElement, PointElement, LinearScale, Tooltip, zoomPlugin);
+ChartJS.register(LineElement, PointElement, LinearScale, Tooltip, Decimation, zoomPlugin);
 
 /** Custom dataset with additional metadata */
 type WaveformDataset = ChartDataset<'line'> & {
@@ -82,9 +83,15 @@ export const WaveformsPanel: React.FC<Props> = ({ options, data, width, height, 
     return makeLegendItems(chartdata, options.legend.showLegend);
   }, [chartdata, options.legend.showLegend]);
 
+  // Decimation walks the points assuming an ascending x, so it is only safe
+  // where `normalized` already holds.
+  const decimation = useMemo(() => {
+    return options.decimation && buffers.every((buffer) => buffer.sorted);
+  }, [options.decimation, buffers]);
+
   const coptions = useMemo(() => {
-    return makeChartJSOption(options, theme);
-  }, [options, theme]);
+    return makeChartJSOption(options, theme, decimation);
+  }, [options, theme, decimation]);
 
   const sliderMarks = useMemo(() => makeMarks(data.series), [data.series]);
 
@@ -301,7 +308,7 @@ function makeChartData(
   return { datasets };
 }
 
-function makeChartJSOption(options: WaveformsOptions, theme: GrafanaTheme2) {
+function makeChartJSOption(options: WaveformsOptions, theme: GrafanaTheme2, decimation: boolean) {
   return {
     responsive: true,
     // Disable animation
@@ -318,6 +325,14 @@ function makeChartJSOption(options: WaveformsOptions, theme: GrafanaTheme2) {
     plugins: {
       legend: {
         display: false,
+      },
+
+      // Chart.js only steps in past 4x the canvas width, so this stays a no-op
+      // for waveforms the panel can draw point for point. 'min-max' keeps the
+      // extremes of each pixel column, which is what preserves narrow spikes.
+      decimation: {
+        enabled: decimation,
+        algorithm: 'min-max' as const,
       },
 
       zoom: {

@@ -19,6 +19,13 @@ Internally, waveform rendering is implemented using [Chart.js](https://www.chart
   - Zoom into a specific range of the waveform by dragging over the display area.
   - Reset the zoom to the full view with a single click.
 
+- **Decimation for oversized waveforms** (optional, off by default)
+  - When a waveform carries far more points than the panel has pixels, only the minimum
+    and maximum of each pixel column are drawn. The shape and its peaks are preserved,
+    but the dropped samples can no longer be reached by the tooltip, and zooming in
+    restores the detail.
+  - Enable it with the **Decimation** panel option.
+
 ## Installing the plugin with Grafana CLI
 
 1. Install the plugin with Grafana CLI. Execute Grafana CLI as following:
