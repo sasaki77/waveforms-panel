@@ -82,15 +82,17 @@ export const WaveformsPanel: React.FC<Props> = ({ options, data, width, height, 
     return makeLegendItems(chartdata, options.legend.showLegend);
   }, [chartdata, options.legend.showLegend]);
 
-  // Decimation walks the points assuming an ascending x, so it is only safe
-  // where `normalized` already holds.
-  const decimation = useMemo(() => {
-    return options.decimation && buffers.every((buffer) => buffer.sorted);
-  }, [options.decimation, buffers]);
+  // `parsing: false` is a chart-wide switch, so it may only be claimed when
+  // every index column ascends, not just some of them.
+  const sorted = useMemo(() => buffers.every((buffer) => buffer.sorted), [buffers]);
+
+  // Decimation locates the visible range by binary search, so it needs the same
+  // guarantee.
+  const decimation = options.decimation && sorted;
 
   const coptions = useMemo(() => {
-    return makeChartJSOption(options, theme, decimation);
-  }, [options, theme, decimation]);
+    return makeChartJSOption(options, theme, decimation, sorted);
+  }, [options, theme, decimation, sorted]);
 
   const sliderMarks = useMemo(() => makeMarks(data.series), [data.series]);
 
@@ -307,7 +309,7 @@ function makeChartData(
   return { datasets };
 }
 
-function makeChartJSOption(options: WaveformsOptions, theme: GrafanaTheme2, decimation: boolean) {
+function makeChartJSOption(options: WaveformsOptions, theme: GrafanaTheme2, decimation: boolean, sorted: boolean) {
   return {
     responsive: true,
     // Disable animation
@@ -315,9 +317,12 @@ function makeChartJSOption(options: WaveformsOptions, theme: GrafanaTheme2, deci
       duration: 0,
     },
 
-    // Datasets are built as {x, y} objects already, so Chart.js can skip its own
-    // per-point parsing pass over every waveform.
-    parsing: false as const,
+    // Datasets are built as {x, y} objects already, so `false` lets Chart.js adopt
+    // them as-is instead of parsing every point into a copy. It also reads that as
+    // a promise that x ascends: it marks the data sorted without checking, and
+    // then takes the x range from the first and last point alone. Where that does
+    // not hold, fall back to parsing the same keys it would use by default.
+    parsing: sorted ? (false as const) : { xAxisKey: 'x', yAxisKey: 'y' },
 
     maintainAspectRatio: false,
 
