@@ -34,11 +34,63 @@ export function isAscending(values: number[]) {
 }
 
 /**
+ * One name per series, unique within the panel. It is both what the legend
+ * shows and what the hidden-series state is keyed by — deliberately the same
+ * string, so clicking a legend row always acts on the series it names.
+ *
+ *     frame              name
+ *     -----------------  ----------
+ *     name PV1           PV1
+ *     name PV1           PV1 2
+ *     refId A            Series (A)
+ *     (neither)          Series (3)
+ *
+ * `Series (…)` is how getFrameDisplayName names an unnamed frame; its earlier
+ * branches want a lone value field, which a waveform frame never has. Written
+ * out, not imported: a runtime `@grafana/data` import drags in date-fns.
+ *
+ * The names must not repeat. `updateHiddenSeries` isolates by hiding every name
+ * that is not the clicked one, which is nothing at all when two series share
+ * one, leaving the legend inert.
+ */
+export function makeSeriesNames(series: DataFrame[]): string[] {
+  const taken = new Set<string>();
+
+  return series.map((s, i) => {
+    const base = s.name || (s.refId ? `Series (${s.refId})` : `Series (${i})`);
+
+    return claimKey(base, taken);
+  });
+}
+
+/**
+ * `base`, or the first free `base 2`, `base 3`, … — then records the choice, so
+ * no two series come away with the same key. A frame named `A 2` outright just
+ * pushes the next claimant along to `A 2 2`. Numbered like the repeated field
+ * names in `@grafana/data`'s getUniqueFieldName.
+ */
+function claimKey(base: string, taken: Set<string>): string {
+  let key = base;
+  let n = 1;
+
+  while (taken.has(key)) {
+    n += 1;
+    key = `${base} ${n}`;
+  }
+
+  taken.add(key);
+
+  return key;
+}
+
+/**
  * Allocates the reusable point objects for each series. The x values come from
  * the index column, which is shared by every waveform in the frame; y is filled
  * in by `makeChartData` for whichever timestamp column is currently selected.
  */
 export function makeSeriesBuffers(series: DataFrame[]): SeriesBuffer[] {
+  const names = makeSeriesNames(series);
+
   return series.map((s, i) => {
     const indexValues = s.fields[0].values;
     const points: WaveformPoint[] = new Array(indexValues.length);
@@ -48,8 +100,12 @@ export function makeSeriesBuffers(series: DataFrame[]): SeriesBuffer[] {
     }
 
     return {
-      key: s.refId ?? s.name ?? `series-${i}`,
-      name: s.name ?? 'Series',
+      // The same string twice: the legend shows `name` and keys its state and
+      // its React list off `key`, and they have to agree for a click to land on
+      // the series the reader picked. Kept as two fields because callers ask
+      // two different questions of it.
+      key: names[i],
+      name: names[i],
       frame: s,
       points,
       sorted: isAscending(indexValues),

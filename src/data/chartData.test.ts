@@ -55,7 +55,8 @@ describe('makeChartData', () => {
   // A hidden series is still parsed and updated by Chart.js, so it must not be
   // handed the real points.
   it('hands hidden series the shared empty array instead of their points', () => {
-    const { datasets } = makeChartData(buffers(), 0, { A: true }, 'both', 1, 1, testTheme);
+    const [first] = buffers();
+    const { datasets } = makeChartData(buffers(), 0, { [first.key]: true }, 'both', 1, 1, testTheme);
 
     expect(datasets[0].hidden).toBe(true);
     expect(datasets[0].data).toBe(EMPTY_POINTS);
@@ -64,9 +65,11 @@ describe('makeChartData', () => {
   });
 
   it('only hides a series whose flag is exactly true', () => {
-    const { datasets } = makeChartData(buffers(), 0, { A: false }, 'both', 1, 1, testTheme);
+    const [first] = buffers();
+    const { datasets } = makeChartData(buffers(), 0, { [first.key]: false }, 'both', 1, 1, testTheme);
 
     expect(datasets[0].hidden).toBe(false);
+    expect(datasets[0].data).not.toBe(EMPTY_POINTS);
   });
 
   it('claims normalized only for series whose index column ascends', () => {
@@ -137,7 +140,8 @@ describe('makeChartData', () => {
       const { datasets } = makeChartData(mixed(), 99, {}, 'both', 1, 1, testTheme);
 
       expect(datasets).toHaveLength(2);
-      expect(datasets.map((d) => d.custom.key)).toEqual(['A', 'B']);
+      // Whatever makeSeriesNames derives, the datasets have to carry it through.
+      expect(datasets.map((d) => d.custom.key)).toEqual(mixed().map((b) => b.key));
       expect(datasets.every((d) => d.data === EMPTY_POINTS)).toBe(true);
     });
   });
