@@ -10,10 +10,11 @@ import type { DataFrame } from '@grafana/data';
 export function testFrame(props: {
   refId?: string;
   name?: string;
-  index: number[];
+  /** Omit where the test is only about how the frame is identified. */
+  index?: number[];
   columns?: Record<string, number[]>;
 }): DataFrame {
-  const { refId, name, index, columns = {} } = props;
+  const { refId, name, index = [], columns = {} } = props;
 
   const fields = [
     { name: 'index', values: index },

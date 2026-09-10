@@ -40,8 +40,8 @@ describe('makeLegendItems', () => {
   // VizLegendList uses getItemKey as the React key and falls back to the label
   // without it. Duplicate keys make the rendered list accumulate entries.
   describe('React list keys', () => {
-    it('keys each item by the dataset key rather than the label', () => {
-      expect(makeLegendItems(data, true).map((item) => item.getItemKey?.())).toEqual(['A', 'B']);
+    it('keys each item by the dataset key and its position, not the label', () => {
+      expect(makeLegendItems(data, true).map((item) => item.getItemKey?.())).toEqual(['A-0', 'B-1']);
     });
 
     it('keeps the keys distinct when two series share a label', () => {
@@ -52,8 +52,22 @@ describe('makeLegendItems', () => {
 
       const keys = makeLegendItems(collides, true).map((item) => item.getItemKey?.());
 
-      expect(keys).toEqual(['A', 'B']);
+      expect(keys).toEqual(['A-0', 'B-1']);
       expect(new Set(keys).size).toBe(2);
+    });
+
+    // The position is in the key precisely so that nothing upstream has to
+    // guarantee uniqueness for the list to keep reconciling.
+    it('keeps the keys distinct even when the dataset keys themselves collide', () => {
+      const collides = chartData([
+        { key: 'A', label: 'same', color: '#ff0000', hidden: false },
+        { key: 'A', label: 'same', color: '#00ff00', hidden: false },
+        { key: 'A', label: 'same', color: '#0000ff', hidden: false },
+      ]);
+
+      const keys = makeLegendItems(collides, true).map((item) => item.getItemKey?.());
+
+      expect(new Set(keys).size).toBe(3);
     });
   });
 });

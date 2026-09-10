@@ -18,13 +18,12 @@ export function makeLegendItems(chartdata: ChartData<'line'>, enable: boolean): 
     return [];
   }
 
-  return (chartdata.datasets as WaveformDataset[]).map((ds) => ({
-    // VizLegendList keys its React list by this and falls back to the label when
-    // it is missing. Labels are not unique — two series sharing a frame name and
-    // a timestamp column produce the same one — and the duplicate React keys make
-    // the rendered list accumulate entries as the slider moves. custom.key is the
-    // per-series key the hidden-series state is already indexed by.
-    getItemKey: () => ds.custom.key,
+  return (chartdata.datasets as WaveformDataset[]).map((ds, i) => ({
+    // The React key for VizLegendList, which falls back to the *label* without
+    // it — and duplicate keys make the rendered list accumulate entries as the
+    // slider moves. The position makes this unique by construction, as it does
+    // in Grafana's own PlotLegend.
+    getItemKey: () => `${ds.custom.key}-${i}`,
     label: String(ds.label),
     color: String(ds.borderColor),
     yAxis: 1,
