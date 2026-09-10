@@ -34,11 +34,15 @@ export function makeChartData(
 
     return {
       type: 'line',
-      label: `${buffer.name} - ${valueField.name}`,
+
+      // A frame can be narrower than the selected index when the series carry
+      // different numbers of timestamp columns, so the column may not be there.
+      label: valueField ? `${buffer.name} - ${valueField.name}` : buffer.name,
 
       // A hidden series is still parsed and updated by Chart.js, so hand it an
-      // empty array rather than the real points.
-      data: hidden ? EMPTY_POINTS : fillPoints(buffer.points, valueField.values),
+      // empty array rather than the real points. A series that has no column at
+      // this index is blanked the same way instead of throwing.
+      data: hidden || !valueField ? EMPTY_POINTS : fillPoints(buffer.points, valueField.values),
 
       // The points are already in Chart.js' internal shape, so `parsing: false`
       // (set on the chart) lets it use this array as-is. `normalized` additionally

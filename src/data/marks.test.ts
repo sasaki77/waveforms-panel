@@ -21,4 +21,18 @@ describe('makeMarks', () => {
 
     expect(makeMarks([frame])).toEqual({ '0': ['t0'] });
   });
+
+  // A frame with nothing after the index column used to read fields[1].name off
+  // undefined and throw during render.
+  it('returns no marks for a frame carrying only the index column', () => {
+    const frame = testFrame({ refId: 'A', index: [0, 1] });
+
+    expect(makeMarks([frame])).toEqual({});
+  });
+
+  it('returns no marks for a frame with no fields at all', () => {
+    const frame = { refId: 'A', fields: [], length: 0 } as unknown as ReturnType<typeof testFrame>;
+
+    expect(makeMarks([frame])).toEqual({});
+  });
 });

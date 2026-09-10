@@ -26,7 +26,11 @@ interface Props {
 }
 
 export const WaveformsChart: React.FC<Props> = ({ width, height, data, options }) => (
-  <div style={{ width, height }}>
+  // Chart.js documents a relatively positioned container dedicated to the chart.
+  // v4 sizes the canvas from a ResizeObserver on this element, so the positioning
+  // is not load-bearing today; it keeps us on the documented shape and gives any
+  // future overlay something to anchor to.
+  <div style={{ position: 'relative', width, height }}>
     <Line data={data} options={options} />
   </div>
 );

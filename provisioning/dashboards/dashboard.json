@@ -105,6 +105,105 @@
       ],
       "title": "Sample Panel Title",
       "type": "sasaki77-waveforms-panel"
+    },
+    {
+      "datasource": {
+        "type": "grafana-testdata-datasource",
+        "uid": "trlxrdZVk"
+      },
+      "description": "A frame with nothing after the index column. Expects the missing-waveform error view rather than a crash.",
+      "fieldConfig": {
+        "defaults": {},
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 0,
+        "y": 8
+      },
+      "id": 3,
+      "options": {
+        "displayMode": "both",
+        "lineWidth": 1,
+        "pointSize": 3,
+        "axisLabel": "",
+        "decimation": false,
+        "legend": {
+          "calcs": [],
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": true
+        }
+      },
+      "pluginVersion": "1.0.0",
+      "targets": [
+        {
+          "datasource": {
+            "type": "grafana-testdata-datasource",
+            "uid": "db84e60d-b92a-4089-82cb-34842fb1754b"
+          },
+          "rawFrameContent": "[\n  {\n    \"columns\": [\n      {\n        \"text\": \"index\",\n        \"type\": \"number\"\n      }\n    ],\n    \"rows\": [\n      [0],\n      [1],\n      [2],\n      [3],\n      [4]\n    ]\n  }\n]\n",
+          "refId": "A",
+          "scenarioId": "raw_frame"
+        }
+      ],
+      "title": "Index column only",
+      "type": "sasaki77-waveforms-panel"
+    },
+    {
+      "datasource": {
+        "type": "grafana-testdata-datasource",
+        "uid": "trlxrdZVk"
+      },
+      "description": "A carries three waveforms, B only one. Move the slider past 0: the B line should disappear while A keeps drawing, and neither should crash the panel.",
+      "fieldConfig": {
+        "defaults": {},
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 12,
+        "y": 8
+      },
+      "id": 4,
+      "options": {
+        "displayMode": "both",
+        "lineWidth": 1,
+        "pointSize": 3,
+        "axisLabel": "",
+        "decimation": false,
+        "legend": {
+          "calcs": [],
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": true
+        }
+      },
+      "pluginVersion": "1.0.0",
+      "targets": [
+        {
+          "datasource": {
+            "type": "grafana-testdata-datasource",
+            "uid": "db84e60d-b92a-4089-82cb-34842fb1754b"
+          },
+          "rawFrameContent": "[\n  {\n    \"columns\": [\n      {\n        \"text\": \"index\",\n        \"type\": \"number\"\n      },\n      {\n        \"text\": \"2023-05-09T17:11:14.422+09:00\",\n        \"type\": \"number\"\n      },\n      {\n        \"text\": \"2023-05-10T10:23:22.469+09:00\",\n        \"type\": \"number\"\n      },\n      {\n        \"text\": \"2023-05-11T09:02:41.108+09:00\",\n        \"type\": \"number\"\n      }\n    ],\n    \"rows\": [\n      [0, 1, 10, 100],\n      [1, 2, 20, 200],\n      [2, 3, 15, 150],\n      [3, 4, 25, 250],\n      [4, 5, 30, 300]\n    ]\n  }\n]\n",
+          "refId": "A",
+          "scenarioId": "raw_frame"
+        },
+        {
+          "datasource": {
+            "type": "grafana-testdata-datasource",
+            "uid": "db84e60d-b92a-4089-82cb-34842fb1754b"
+          },
+          "rawFrameContent": "[\n  {\n    \"columns\": [\n      {\n        \"text\": \"index\",\n        \"type\": \"number\"\n      },\n      {\n        \"text\": \"2023-05-09T17:11:14.422+09:00\",\n        \"type\": \"number\"\n      }\n    ],\n    \"rows\": [\n      [0, 6],\n      [1, 7],\n      [2, 4],\n      [3, 9],\n      [4, 8]\n    ]\n  }\n]\n",
+          "refId": "B",
+          "scenarioId": "raw_frame"
+        }
+      ],
+      "title": "Mismatched waveform counts",
+      "type": "sasaki77-waveforms-panel"
     }
   ],
   "preload": false,

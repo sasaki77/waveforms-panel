@@ -19,6 +19,12 @@ export function makeLegendItems(chartdata: ChartData<'line'>, enable: boolean): 
   }
 
   return (chartdata.datasets as WaveformDataset[]).map((ds) => ({
+    // VizLegendList keys its React list by this and falls back to the label when
+    // it is missing. Labels are not unique — two series sharing a frame name and
+    // a timestamp column produce the same one — and the duplicate React keys make
+    // the rendered list accumulate entries as the slider moves. custom.key is the
+    // per-series key the hidden-series state is already indexed by.
+    getItemKey: () => ds.custom.key,
     label: String(ds.label),
     color: String(ds.borderColor),
     yAxis: 1,

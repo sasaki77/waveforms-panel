@@ -36,6 +36,26 @@ describe('makeLegendItems', () => {
     });
     expect(makeLegendItems(data, true)[1].disabled).toBe(true);
   });
+
+  // VizLegendList uses getItemKey as the React key and falls back to the label
+  // without it. Duplicate keys make the rendered list accumulate entries.
+  describe('React list keys', () => {
+    it('keys each item by the dataset key rather than the label', () => {
+      expect(makeLegendItems(data, true).map((item) => item.getItemKey?.())).toEqual(['A', 'B']);
+    });
+
+    it('keeps the keys distinct when two series share a label', () => {
+      const collides = chartData([
+        { key: 'A', label: 'Series - 2023-05-09T17:11:14.422+09:00', color: '#ff0000', hidden: false },
+        { key: 'B', label: 'Series - 2023-05-09T17:11:14.422+09:00', color: '#00ff00', hidden: false },
+      ]);
+
+      const keys = makeLegendItems(collides, true).map((item) => item.getItemKey?.());
+
+      expect(keys).toEqual(['A', 'B']);
+      expect(new Set(keys).size).toBe(2);
+    });
+  });
 });
 
 describe('updateHiddenSeries', () => {

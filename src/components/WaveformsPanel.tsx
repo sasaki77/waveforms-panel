@@ -26,9 +26,20 @@ export const WaveformsPanel: React.FC<Props> = ({ options, data, width, height, 
 
   const buffers = useMemo(() => makeSeriesBuffers(data.series), [data.series]);
 
+  // How many waveforms the slider may reach, taken from the first series as the
+  // panel's data format expects every series to share the timestamp columns.
+  // Plain consts rather than hooks, so they may sit ahead of the early return
+  // below without disturbing hook order.
+  const waveformCount = data.series.length > 0 ? data.series[0].fields.length - 1 : 0;
+
+  // `index` survives new query results, so a refresh that returns fewer columns
+  // can leave it past the end. Clamping here shows the last waveform there is
+  // instead of an empty chart.
+  const safeIndex = Math.min(index, Math.max(0, waveformCount - 1));
+
   const chartdata = useMemo<ChartData<'line'>>(() => {
-    return makeChartData(buffers, index, hiddenSeries, displayMode, lineWidth, pointSize, theme);
-  }, [buffers, index, hiddenSeries, displayMode, lineWidth, pointSize, theme]);
+    return makeChartData(buffers, safeIndex, hiddenSeries, displayMode, lineWidth, pointSize, theme);
+  }, [buffers, safeIndex, hiddenSeries, displayMode, lineWidth, pointSize, theme]);
 
   const items = useMemo<WaveformLegendItem[]>(() => {
     return makeLegendItems(chartdata, options.legend.showLegend);
@@ -52,10 +63,20 @@ export const WaveformsPanel: React.FC<Props> = ({ options, data, width, height, 
     return <PanelDataErrorView fieldConfig={fieldConfig} panelId={id} data={data} needsStringField />;
   }
 
-  const dlen = data.series[0].fields.length - 1;
+  // A frame with nothing after the index column has no waveform to draw.
+  if (waveformCount < 1) {
+    return (
+      <PanelDataErrorView
+        fieldConfig={fieldConfig}
+        panelId={id}
+        data={data}
+        message="This panel needs an index column followed by at least one waveform column."
+      />
+    );
+  }
 
   const onIndexChange = (value: number) => {
-    setIndex(value >= dlen ? dlen - 1 : value || 0);
+    setIndex(value >= waveformCount ? waveformCount - 1 : value || 0);
   };
 
   const onSeriesClick = (clickedKey: string, ctrl: boolean) => {
@@ -85,8 +106,8 @@ export const WaveformsPanel: React.FC<Props> = ({ options, data, width, height, 
           <WaveformsSlider
             width={w}
             marks={sliderMarks}
-            max={dlen - 1}
-            value={index}
+            max={waveformCount - 1}
+            value={safeIndex}
             onChange={onIndexChange}
             label={chartdata.datasets.length > 0 ? String(chartdata.datasets[0].label) : ''}
           />
