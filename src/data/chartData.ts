@@ -1,4 +1,4 @@
-import { config } from '@grafana/runtime';
+import type { GrafanaTheme2 } from '@grafana/data';
 import type { ChartDataset } from 'chart.js';
 
 import type { WaveformsOptions } from 'types';
@@ -17,9 +17,12 @@ export function makeChartData(
   hiddenSeries: Record<string, boolean>,
   displayMode: WaveformsOptions['displayMode'],
   lineWidth: number,
-  pointSize: number
+  pointSize: number,
+  // Taken from the panel's React context rather than `config.theme2`, so the
+  // series colors come from the same theme the axes and grid are drawn with.
+  theme: GrafanaTheme2
 ) {
-  const { palette, getColorByName } = config.theme2.visualization;
+  const { palette, getColorByName } = theme.visualization;
 
   const showLine = displayMode !== 'point';
   const pointRadius = displayMode === 'line' ? 0 : pointSize;

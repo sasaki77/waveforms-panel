@@ -27,8 +27,8 @@ export const WaveformsPanel: React.FC<Props> = ({ options, data, width, height, 
   const buffers = useMemo(() => makeSeriesBuffers(data.series), [data.series]);
 
   const chartdata = useMemo<ChartData<'line'>>(() => {
-    return makeChartData(buffers, index, hiddenSeries, displayMode, lineWidth, pointSize);
-  }, [buffers, index, hiddenSeries, displayMode, lineWidth, pointSize]);
+    return makeChartData(buffers, index, hiddenSeries, displayMode, lineWidth, pointSize, theme);
+  }, [buffers, index, hiddenSeries, displayMode, lineWidth, pointSize, theme]);
 
   const items = useMemo<WaveformLegendItem[]>(() => {
     return makeLegendItems(chartdata, options.legend.showLegend);
