@@ -60,9 +60,12 @@ export function makeChartJSOption(
     scales: {
       x: {
         type: 'linear',
+        min: options.xAxisMin,
+        max: options.xAxisMax,
+        bounds: 'data',
         title: {
           display: true,
-          text: 'Index',
+          text: options.xAxisLabel,
           color: theme.colors.text.primary,
         },
         ticks: {
@@ -74,9 +77,13 @@ export function makeChartJSOption(
         },
       },
       y: {
+        min: options.yAxisMin,
+        max: options.yAxisMax,
+        suggestedMin: options.yAxisSoftMin,
+        suggestedMax: options.yAxisSoftMax,
         title: {
           display: true,
-          text: options.axisLabel,
+          text: options.yAxisLabel,
           color: theme.colors.text.primary,
         },
         grid: {

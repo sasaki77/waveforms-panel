@@ -5,7 +5,8 @@ import { makeChartJSOption } from './options';
 const options = {
   lineWidth: 1,
   pointSize: 1,
-  axisLabel: 'Voltage',
+  xAxisLabel: 'Index',
+  yAxisLabel: 'Voltage',
   displayMode: 'both',
   decimation: false,
 } as WaveformsOptions;
@@ -31,11 +32,12 @@ describe('makeChartJSOption', () => {
     expect(makeChartJSOption(options, theme, true, true).plugins?.decimation?.algorithm).toBe('min-max');
   });
 
-  it('labels the y axis with the configured axis label', () => {
-    const scales = makeChartJSOption(options, theme, false, true).scales;
+  it('labels each axis with its own configured label', () => {
+    const withAxisOptions = { ...options, xAxisLabel: 'Sample', yAxisLabel: 'Voltage' } as WaveformsOptions;
+    const scales = makeChartJSOption(withAxisOptions, theme, false, true).scales;
 
+    expect(scales?.x?.title).toMatchObject({ display: true, text: 'Sample' });
     expect(scales?.y?.title).toMatchObject({ display: true, text: 'Voltage' });
-    expect(scales?.x?.title).toMatchObject({ display: true, text: 'Index' });
   });
 
   it('takes the grid colour from the theme', () => {
@@ -66,5 +68,46 @@ describe('makeChartJSOption', () => {
 
   it('hides the built-in legend, which the panel renders itself', () => {
     expect(makeChartJSOption(options, theme, false, true).plugins?.legend?.display).toBe(false);
+  });
+
+  // Otherwise Chart.js extends the x axis out to the nearest round tick, e.g.
+  // drawing all the way to 600 for data maxing out at 510.
+  it('clips the x axis to the data range instead of the nearest tick', () => {
+    expect(makeChartJSOption(options, theme, false, true).scales?.x?.bounds).toBe('data');
+  });
+
+  it('leaves axis bounds to Chart.js when no axis options are configured', () => {
+    const scales = makeChartJSOption(options, theme, false, true).scales;
+
+    expect(scales?.x?.min).toBeUndefined();
+    expect(scales?.x?.max).toBeUndefined();
+    expect(scales?.y?.min).toBeUndefined();
+    expect(scales?.y?.max).toBeUndefined();
+    expect(scales?.y?.suggestedMin).toBeUndefined();
+    expect(scales?.y?.suggestedMax).toBeUndefined();
+  });
+
+  it('fixes the x axis to the configured min/max', () => {
+    const withAxisOptions = { ...options, xAxisMin: 1, xAxisMax: 9 } as WaveformsOptions;
+    const scales = makeChartJSOption(withAxisOptions, theme, false, true).scales;
+
+    expect(scales?.x?.min).toBe(1);
+    expect(scales?.x?.max).toBe(9);
+  });
+
+  it('fixes the y axis to the configured min/max', () => {
+    const withAxisOptions = { ...options, yAxisMin: -5, yAxisMax: 5 } as WaveformsOptions;
+    const scales = makeChartJSOption(withAxisOptions, theme, false, true).scales;
+
+    expect(scales?.y?.min).toBe(-5);
+    expect(scales?.y?.max).toBe(5);
+  });
+
+  it('passes the y axis soft min/max through as suggested bounds', () => {
+    const withAxisOptions = { ...options, yAxisSoftMin: 0, yAxisSoftMax: 100 } as WaveformsOptions;
+    const scales = makeChartJSOption(withAxisOptions, theme, false, true).scales;
+
+    expect(scales?.y?.suggestedMin).toBe(0);
+    expect(scales?.y?.suggestedMax).toBe(100);
   });
 });

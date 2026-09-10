@@ -37,17 +37,66 @@ export const plugin = new PanelPlugin<WaveformsOptions>(WaveformsPanel).setPanel
         step: 1,
       },
     })
-    .addTextInput({
-      path: 'axisLabel',
-      name: 'Axis label',
-      defaultValue: '',
-    })
     .addBooleanSwitch({
       path: 'decimation',
       name: 'Decimation',
       description:
         'Speed up waveforms with far more points than the panel has pixels. Peaks are kept, but dropped samples are not reachable by the tooltip.',
       defaultValue: false,
+    })
+    .addTextInput({
+      path: 'xAxisLabel',
+      name: 'Label',
+      defaultValue: 'Index',
+      category: ['X axis'],
+    })
+    .addNumberInput({
+      path: 'xAxisMin',
+      name: 'Min',
+      description: 'Leave empty to fit the axis to the data.',
+      category: ['X axis'],
+      settings: { placeholder: 'auto' },
+    })
+    .addNumberInput({
+      path: 'xAxisMax',
+      name: 'Max',
+      description: 'Leave empty to fit the axis to the data.',
+      category: ['X axis'],
+      settings: { placeholder: 'auto' },
+    })
+    .addTextInput({
+      path: 'yAxisLabel',
+      name: 'Label',
+      defaultValue: '',
+      category: ['Y axis'],
+    })
+    .addNumberInput({
+      path: 'yAxisMin',
+      name: 'Min',
+      description: 'Leave empty to fit the axis to the data.',
+      category: ['Y axis'],
+      settings: { placeholder: 'auto' },
+    })
+    .addNumberInput({
+      path: 'yAxisMax',
+      name: 'Max',
+      description: 'Leave empty to fit the axis to the data.',
+      category: ['Y axis'],
+      settings: { placeholder: 'auto' },
+    })
+    .addNumberInput({
+      path: 'yAxisSoftMin',
+      name: 'Soft min',
+      description: 'A suggested lower bound: the axis still expands past it if the data goes lower.',
+      category: ['Y axis'],
+      settings: { placeholder: 'auto' },
+    })
+    .addNumberInput({
+      path: 'yAxisSoftMax',
+      name: 'Soft max',
+      description: 'A suggested upper bound: the axis still expands past it if the data goes higher.',
+      category: ['Y axis'],
+      settings: { placeholder: 'auto' },
     });
 
   commonOptionsBuilder.addLegendOptions(builder);
