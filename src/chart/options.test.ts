@@ -1,11 +1,6 @@
-import type { GrafanaTheme2 } from '@grafana/data';
-
 import type { WaveformsOptions } from 'types';
+import { testTheme as theme } from 'theme.testutil';
 import { makeChartJSOption } from './options';
-
-// `makeChartJSOption` only reaches for the grid colour, so a stub avoids pulling
-// the whole theme (and `@grafana/data`'s runtime) into the test.
-const theme = { colors: { border: { weak: '#eeeeee' } } } as GrafanaTheme2;
 
 const options = {
   lineWidth: 1,
@@ -48,6 +43,16 @@ describe('makeChartJSOption', () => {
 
     expect(scales?.x?.grid?.color).toBe('#eeeeee');
     expect(scales?.y?.grid?.color).toBe('#eeeeee');
+  });
+
+  // These were hardcoded to 'white', which is invisible on a light theme.
+  it('takes the axis title and tick colours from the theme', () => {
+    const scales = makeChartJSOption(options, theme, false, true).scales;
+
+    expect(scales?.x?.title?.color).toBe('#111111');
+    expect(scales?.x?.ticks?.color).toBe('#111111');
+    expect(scales?.y?.title?.color).toBe('#111111');
+    expect(scales?.y?.ticks?.color).toBe('#111111');
   });
 
   it('zooms by drag only, leaving pan and wheel off', () => {

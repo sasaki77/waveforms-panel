@@ -63,10 +63,10 @@ export function makeChartJSOption(
         title: {
           display: true,
           text: 'Index',
-          color: 'white',
+          color: theme.colors.text.primary,
         },
         ticks: {
-          color: 'white',
+          color: theme.colors.text.primary,
           precision: 0,
         },
         grid: {
@@ -77,13 +77,13 @@ export function makeChartJSOption(
         title: {
           display: true,
           text: options.axisLabel,
-          color: 'white',
+          color: theme.colors.text.primary,
         },
         grid: {
           color: theme.colors.border.weak,
         },
         ticks: {
-          color: 'white',
+          color: theme.colors.text.primary,
         },
       },
     },
